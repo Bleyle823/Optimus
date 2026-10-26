@@ -1,0 +1,18 @@
+{
+  "name": "@optimus/peaq-setup",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "setup": "node dist/cli.js"
+  },
+  "dependencies": {
+    "@optimus/shared": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
