@@ -1,0 +1,11 @@
+{
+  "name": "@optimus/scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@optimus/gateway": "workspace:*",
+    "@optimus/wallet": "workspace:*",
+    "@optimus/telemetry-sim": "workspace:*",
+    "@qvac/sdk": "0.22.0"
+  }
+}

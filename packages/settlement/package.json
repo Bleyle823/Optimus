@@ -1,0 +1,19 @@
+{
+  "name": "@optimus/settlement",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/worker.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "start": "node dist/worker.js"
+  },
+  "dependencies": {
+    "@optimus/shared": "workspace:*",
+    "@optimus/wallet": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
