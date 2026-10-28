@@ -201,11 +201,37 @@ def post_telemetry():
         pass
 
 
+_kiosk_state = {}
+
+
+def kiosk_payload(**extra):
+    body = {
+        "status": "ok",
+        "reason": "",
+        "action": "",
+        "model": "llama-3.2-1b-instruct",
+        "qvacReady": False,
+        "source": "rules",
+        "latencyMs": 0,
+        "gatewayDid": os.environ.get("GATEWAY_DID", "did:peaq:gateway-local"),
+        "machineId": os.environ.get("MACHINE_ID", "peaqos:machine:demo"),
+        "priceUsdt": "0.01",
+        "settlement": "none",
+        "receiptId": "",
+        "privacy": "Telemetry stays on LAN",
+    }
+    body.update(_kiosk_state)
+    body.update(extra)
+    return body
+
+
 def emit_kiosk(payload):
+    global _kiosk_state
+    _kiosk_state.update(payload)
     try:
         os.makedirs(os.path.dirname(KIOSK_STATUS_PATH), exist_ok=True)
         with open(KIOSK_STATUS_PATH, "w", encoding="utf-8") as handle:
-            json.dump(payload, handle)
+            json.dump(_kiosk_state, handle)
             handle.flush()
             os.fsync(handle.fileno())
     except OSError:
@@ -223,38 +249,48 @@ def pay_for_inference():
     global inference_paid, halt
     stop_wheels()
     emit_kiosk(
-        {
-            "status": "pending",
-            "reason": "Requesting quote…",
-            "action": "Signing payment intent",
-            "priceUsdt": "0.01",
-            "settlement": "pending",
-        }
+        kiosk_payload(
+            status="pending",
+            reason="Requesting quote…",
+            action="Signing WDK payment intent",
+            settlement="pending",
+        )
     )
     try:
         body = post_json(AGENT_TELEMETRY_URL, sample_telemetry())
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError):
         emit_kiosk(
-            {
-                "status": "critical",
-                "reason": "Agent unreachable",
-                "action": "Start machine-agent on host",
-                "priceUsdt": "0.01",
-                "settlement": "none",
-            }
+            kiosk_payload(
+                status="critical",
+                reason="Agent unreachable",
+                action="Start machine-agent on host",
+            )
         )
         halt = True
         return False
 
     decision = body.get("decision", {})
+    quote = body.get("quote") or {}
+    receipt = body.get("receipt") or {}
+    qvac = body.get("qvac") or {}
+    receipt_id = str(receipt.get("receiptId", ""))
     emit_kiosk(
-        {
-            "status": decision.get("status", "ok"),
-            "reason": decision.get("reason", ""),
-            "action": decision.get("action", ""),
-            "priceUsdt": "0.01",
-            "settlement": "pending_settlement",
-        }
+        kiosk_payload(
+            status=decision.get("status", "ok"),
+            reason=decision.get("reason", ""),
+            action=decision.get("action", ""),
+            source=decision.get("source", "rules"),
+            latencyMs=decision.get("latencyMs", 0),
+            model=qvac.get("modelAlias") or quote.get("model") or "llama-3.2-1b-instruct",
+            qvacReady=bool(qvac.get("ready")),
+            gatewayDid=quote.get("gatewayDid")
+            or receipt.get("gatewayDid")
+            or os.environ.get("GATEWAY_DID", "did:peaq:gateway-local"),
+            machineId=os.environ.get("MACHINE_ID", "peaqos:machine:demo"),
+            priceUsdt=quote.get("priceUsdt") or receipt.get("amountUsdt") or "0.01",
+            settlement=receipt.get("settlementStatus", "pending_settlement"),
+            receiptId=receipt_id[:8],
+        )
     )
     apply_decision(decision)
     if decision.get("status") == "critical":
@@ -486,53 +522,43 @@ def run_pick_and_place():
 # --- Mission ---
 clear_faults()
 emit_kiosk(
-    {
-        "status": "ok",
-        "reason": "Driving to laptop kiosk",
-        "action": "Pay for inference first",
-        "priceUsdt": "0.01",
-        "settlement": "none",
-    }
+    kiosk_payload(
+        reason="Driving to laptop kiosk",
+        action="Pay for nearby QVAC inference",
+    )
 )
 if not drive_to_kiosk():
     emit_kiosk(
-        {
-            "status": "critical",
-            "reason": "Could not reach kiosk",
-            "action": "Check KIOSK_TARGET_* env",
-            "priceUsdt": "0.01",
-            "settlement": "none",
-        }
+        kiosk_payload(
+            status="critical",
+            reason="Could not reach kiosk",
+            action="Check KIOSK_TARGET_* env",
+        )
     )
 elif pay_for_inference():
     emit_kiosk(
-        {
-            "status": "ok",
-            "reason": "Paid — driving back to the belt",
-            "action": "Crab-walk to pick start",
-            "priceUsdt": "0.01",
-            "settlement": "pending_settlement",
-        }
+        kiosk_payload(
+            reason="Paid — driving back to the belt",
+            action="Crab-walk to pick start",
+            settlement="pending_settlement",
+        )
     )
     if not drive_to_spawn():
         emit_kiosk(
-            {
-                "status": "warning",
-                "reason": "Paid; could not reach pick start",
-                "action": "Check spawn GPS target",
-                "priceUsdt": "0.01",
-                "settlement": "pending_settlement",
-            }
+            kiosk_payload(
+                status="warning",
+                reason="Paid; could not reach pick start",
+                action="Check spawn GPS target",
+                settlement="pending_settlement",
+            )
         )
     else:
         emit_kiosk(
-            {
-                "status": "ok",
-                "reason": "At pick start — driving to the conveyor",
-                "action": "Pick cube from conveyor",
-                "priceUsdt": "0.01",
-                "settlement": "pending_settlement",
-            }
+            kiosk_payload(
+                reason="At pick start — driving to the conveyor",
+                action="Pick cube from conveyor",
+                settlement="pending_settlement",
+            )
         )
         run_pick_and_place()
 
