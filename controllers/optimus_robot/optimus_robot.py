@@ -206,6 +206,8 @@ def emit_kiosk(payload):
         os.makedirs(os.path.dirname(KIOSK_STATUS_PATH), exist_ok=True)
         with open(KIOSK_STATUS_PATH, "w", encoding="utf-8") as handle:
             json.dump(payload, handle)
+            handle.flush()
+            os.fsync(handle.fileno())
     except OSError:
         pass
 
@@ -483,6 +485,15 @@ def run_pick_and_place():
 
 # --- Mission ---
 clear_faults()
+emit_kiosk(
+    {
+        "status": "ok",
+        "reason": "Driving to laptop kiosk",
+        "action": "Pay for inference first",
+        "priceUsdt": "0.01",
+        "settlement": "none",
+    }
+)
 if not drive_to_kiosk():
     emit_kiosk(
         {

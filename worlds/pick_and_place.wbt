@@ -473,7 +473,9 @@ DEF CONVEYOR_BELT Robot {
       USE FOOT4
     ]
   }
+  name "conveyor belt"
   controller "move_conveyor_belt"
+  window "<generic>"
 }
 DEF MACHINERY Solid {
   translation 1.3026953 -2.6462761 0.1
@@ -658,6 +660,8 @@ DEF OPTIMUS_LAPTOP Laptop {
   translation -1.42 -2.08 0.6
   rotation 0 0 1 1.5708
   controller "optimus_kiosk"
+  window "<generic>"
+  supervisor TRUE
 }
 PlatformCart {
   translation -2.3649928 1.0055135 0
@@ -849,12 +853,14 @@ DEF PRODUCT KukaBox {
   contactMaterial "box"
 }
 PickAndPlaceBenchmark {
+  window "pick_and_place"
 }
 DEF YOUbot Youbot {
   translation -2.4 0 0.10761028
   rotation 0.04953177831291063 -0.02003589122744673 0.9985715627835006 -0.0020853071795858824
   name "YOUbot"
   controller "optimus_robot"
+  window "<generic>"
   supervisor FALSE
   bodySlot [
     GPS {
@@ -874,4 +880,5 @@ DEF YOUbot Youbot {
 }
 JetsonNano {
   translation -1.14 -2 0.6
+  window "<generic>"
 }
