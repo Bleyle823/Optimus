@@ -33,7 +33,7 @@ flowchart LR
 
 **Reference benchmark:** [controllers/pick_and_place/pick_and_place.py](../controllers/pick_and_place/pick_and_place.py) unchanged.
 
-**Logo:** `DEF LOGO` on the factory machine uses [worlds/textures/factory_logo.png](../worlds/textures/factory_logo.png) instead of the sample `webots://` ladybug texture. The PNG background is transparent. The plane size is `1.16 0.25`; translation is `-0.76 0.138 0.79`.
+**Logos:** `DEF LOGO_PANEL` on the factory machine holds three coplanar textures with **local** offsets (QVAC above, Tether center, AIyako below) so spacing follows the sign face, plus small local Z steps to avoid z-fighting. Webots uses `qvac-logo.png` (from [qvac-logo.svg](../worlds/textures/qvac-logo.svg)).
 
 ## Overlays
 
@@ -43,7 +43,7 @@ flowchart LR
 | 3D HUD labels | `QVAC llama-3.2-1b-instruct \| source \| Nms`, Youbot / cube / laptop poses. |
 | Benchmark robot window | `WorldInfo.window` and `PickAndPlaceBenchmark.window` = `pick_and_place` (Overview / Metrics / Instructions). |
 | Generic robot windows | Youbot, laptop, conveyor belt, Jetson Nano use `window "<generic>"`. Perspective `robotWindow:` opens them on load. |
-| Factory logo | Static `DEF LOGO` texture, not a Display. |
+| Factory logos | Static `DEF QVAC_LOGO` / `DEF LOGO` / `DEF AIYAKO_LOGO` textures, not a Display. |
 
 Reload the world after changing `.wbproj`. In the 3D view: **Overlays** menu → show Display (and Camera / RangeFinder if those devices exist). Do not hide **View → Overlay**.
 
