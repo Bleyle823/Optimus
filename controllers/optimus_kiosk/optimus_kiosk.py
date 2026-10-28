@@ -116,13 +116,20 @@ def fmt_xyz(node):
     return f"{p[0]:.2f}, {p[1]:.2f}, {p[2]:.2f}"
 
 
+def trunc_did(did):
+    text = str(did)
+    if len(text) <= 28:
+        return text
+    return text[:18] + "…" + text[-6:]
+
+
 def draw_overlay(line):
     global overlay_text
-    overlay_text = line[:80]
-    robot.setLabel(0, overlay_text, 0.02, 0.02, 0.07, 0x00D4AA, 0.12, "Arial")
+    overlay_text = line[:88]
+    robot.setLabel(0, overlay_text, 0.02, 0.02, 0.065, 0x00D4AA, 0.12, "Arial")
     robot.setLabel(
         1,
-        "Overlays: laptop Display + Youbot/kiosk/benchmark/conveyor windows",
+        "Nearby QVAC gateway — telemetry stays on LAN",
         0.02,
         0.08,
         0.045,
@@ -154,41 +161,61 @@ def draw_scene_hud():
 def draw_idle():
     paint_background()
     display.setColor(0x00D4AA)
-    set_font(36, True)
-    display.drawText("Optimus kiosk", 28, 40)
+    set_font(32, True)
+    display.drawText("QVAC local", 28, 20)
     display.setColor(0xCCCCCC)
-    set_font(24, False)
-    display.drawText("Waiting for the robot...", 28, 110)
-    draw_overlay("Optimus kiosk — waiting for the robot")
+    set_font(22, False)
+    display.drawText("llama-3.2-1b-instruct", 28, 70)
+    display.drawText("Waiting for Youbot telemetry...", 28, 120)
+    display.drawText("Telemetry stays on LAN", 28, 170)
+    draw_overlay("QVAC llama-3.2-1b-instruct | waiting")
 
 
 def draw_status(payload):
     paint_background()
-    display.setColor(0x00D4AA)
-    set_font(32, True)
-    display.drawText("Optimus inference", 28, 24)
-
+    model = str(payload.get("model", "llama-3.2-1b-instruct"))
+    ready = payload.get("qvacReady")
+    ready_txt = "ready" if ready else "idle"
+    source = str(payload.get("source", "rules"))
+    latency = payload.get("latencyMs", 0)
     status = str(payload.get("status", "?"))
     color = 0x44FF88
     if status == "warning":
         color = 0xFFCC00
     elif status == "critical":
         color = 0xFF4444
-    display.setColor(color)
-    set_font(28, True)
-    display.drawText(f"Status: {status}", 28, 90)
+    elif status == "pending":
+        color = 0x66CCFF
 
+    display.setColor(0x00D4AA)
+    set_font(28, True)
+    display.drawText("QVAC local", 28, 16)
     display.setColor(0xEEEEEE)
-    set_font(24, False)
+    set_font(20, False)
+    display.drawText(model[:40], 28, 52)
+    display.drawText(f"Model {ready_txt}  source {source}  {latency} ms", 28, 86)
+
+    display.setColor(color)
+    set_font(24, True)
+    display.drawText(f"Status: {status}", 28, 124)
+
+    display.setColor(0xCCCCCC)
+    set_font(18, False)
+    did = trunc_did(payload.get("gatewayDid", "did:peaq:gateway-local"))
+    display.drawText(f"DID {did}", 28, 160)
+    display.drawText(str(payload.get("privacy", "Telemetry stays on LAN"))[:48], 28, 188)
+
     price = payload.get("priceUsdt", "0.01")
-    reason = str(payload.get("reason", ""))[:42]
-    action = str(payload.get("action", ""))[:42]
     settlement = str(payload.get("settlement", "pending"))
-    display.drawText(f"Quote: ${price} USDT", 28, 150)
-    display.drawText(reason, 28, 200)
-    display.drawText(action, 28, 250)
-    display.drawText(f"Receipt: {settlement}", 28, 310)
-    draw_overlay(f"Kiosk {status} | ${price} | {reason}")
+    receipt_id = str(payload.get("receiptId", ""))
+    display.setColor(0xEEEEEE)
+    display.drawText(f"${price} USDT  {settlement}", 28, 224)
+    if receipt_id:
+        display.drawText(f"Receipt {receipt_id}", 28, 252)
+    display.drawText(str(payload.get("reason", ""))[:48], 28, 288)
+    display.drawText(str(payload.get("action", ""))[:48], 28, 316)
+
+    draw_overlay(f"QVAC {model} | {source} | {latency}ms")
 
 
 lid_joint = find_lid_joint()
