@@ -531,23 +531,66 @@ DEF MACHINERY Solid {
         }
       ]
     }
-    DEF LOGO Pose {
+    DEF LOGO_PANEL Pose {
       translation -0.76 0.138 0.79
       rotation 0.577349935856137 -0.577349935856137 -0.5773509358560258 2.09439
       children [
-        Shape {
-          appearance PBRAppearance {
-            baseColorMap ImageTexture {
-              url [
-                "textures/factory_logo.png"
-              ]
+        DEF QVAC_LOGO Pose {
+          translation 0 0.21 0.003
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColorMap ImageTexture {
+                  url [
+                    "textures/qvac-logo.png"
+                  ]
+                }
+                roughness 1
+                metalness 0
+              }
+              geometry Plane {
+                size 0.58 0.067
+              }
             }
-            roughness 1
-            metalness 0
-          }
-          geometry Plane {
-            size 1.16 0.25
-          }
+          ]
+        }
+        DEF LOGO Pose {
+          translation 0 0 0.002
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColorMap ImageTexture {
+                  url [
+                    "textures/factory_logo.png"
+                  ]
+                }
+                roughness 1
+                metalness 0
+              }
+              geometry Plane {
+                size 0.58 0.125
+              }
+            }
+          ]
+        }
+        DEF AIYAKO_LOGO Pose {
+          translation 0 -0.35 0.001
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColorMap ImageTexture {
+                  url [
+                    "textures/AIyako.png"
+                  ]
+                }
+                roughness 1
+                metalness 0
+              }
+              geometry Plane {
+                size 0.58 0.312
+              }
+            }
+          ]
         }
       ]
     }
