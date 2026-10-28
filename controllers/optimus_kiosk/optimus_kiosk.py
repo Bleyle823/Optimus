@@ -201,7 +201,11 @@ def draw_status(payload):
 
     display.setColor(0xCCCCCC)
     set_font(18, False)
-    did = trunc_did(payload.get("gatewayDid", "did:peaq:gateway-local"))
+    did = trunc_did(
+        payload.get("machineId")
+        or payload.get("gatewayDid")
+        or os.environ.get("MACHINE_ID", "did:peaq:pending")
+    )
     display.drawText(f"DID {did}", 28, 160)
     display.drawText(str(payload.get("privacy", "Telemetry stays on LAN"))[:48], 28, 188)
 
