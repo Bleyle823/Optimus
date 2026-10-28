@@ -1,12 +1,73 @@
 # Optimus
 
-Private, offline AI inference marketplace for Nairobi warehouses — **QVAC** gateway, **WDK** USDT intents, **peaq** machine identity (agung testnet). Simulation: Webots R2025a Youbot pick-and-place.
+<p align="center">
+  <img src="worlds/textures/factory_logo.png" alt="Tether" width="360" />
+</p>
+
+Private, on-device inference for warehouse machines. A **KUKA Youbot** in Webots is the peaqOS machine. **QVAC** runs as that machine’s HTTP runtime on the nearby laptop (the robot has no GPU). **WDK** signs USDT payment intents on the LAN. **peaq** holds identity, the Machine NFT, and Machine Market listing.
+
+Same shape as the [Unitree G1 + QVAC](https://www.peaq.xyz/blog/peaq-brings-qvac-by-tether-to-robots-and-machines-enabling-private-ai-inference-at-the-edge) story: one peaqID, a paired agent that discovers QVAC and pays, no second Machine NFT for the model host.
+
+<p align="center">
+  <img src="docs/images/youbot-pick-and-place.jpg" alt="Youbot on the factory floor next to the pick crate" width="720" />
+</p>
+
+<p align="center">
+  <img src="plugins/robot_windows/pick_and_place/youbot_arm.png" alt="Youbot arm joints" height="200" />
+  &nbsp;
+  <img src="plugins/robot_windows/pick_and_place/youbot_wheels.png" alt="Youbot mecanum wheels" height="200" />
+</p>
+
+## How it fits together
+
+```mermaid
+flowchart LR
+  youbot[Youbot peaqID]
+  agent[machine-agent WDK]
+  qvac[QVAC HTTP runtime]
+  orch[peaqOS Market]
+  youbot --> agent
+  agent -->|"EIP-191 intent LAN"| qvac
+  youbot -->|"one NFT and DID"| orch
+  orch -->|"GET /v1/models POST /v1/chat/completions"| qvac
+```
+
+| Role | In this repo | peaq identity |
+|------|----------------|---------------|
+| Machine | Webots Youbot + [`optimus_robot`](controllers/optimus_robot/optimus_robot.py) | **Only** `did:peaq:<decimal machine id>` |
+| QVAC runtime | [`pnpm gateway`](packages/gateway) on the host / laptop proto | **None.** URL on the Youbot’s orchestrator record |
+| Machine agent | [`@optimus/machine-agent`](packages/machine-agent) | Discovers QVAC, signs WDK intents, posts telemetry |
+
+The laptop Display ([`optimus_kiosk`](controllers/optimus_kiosk/optimus_kiosk.py)) is the kiosk HUD: local GGUF alias, robot DID, `source` (rules vs model), latency, USDT quote, receipt. peaq RPC does **not** print in the Webots console.
+
+### This demo machine (peaq mainnet)
+
+Activated **Robot**, tier **entry**, Market status **active** and identity-verified.
+
+| | |
+|--|--|
+| Owner | [`0x4360d54AdB797bf75013870de1AAD152839587D0`](https://peaq.subscan.io/account/0x4360d54AdB797bf75013870de1AAD152839587D0) |
+| DID | `did:peaq:89559941402598656218897526255035006056145711259135012725567383558333737842803` |
+| Market | `mach_0512f484e126` |
+| QVAC endpoint | `mep_fa8adae44ba3` → `http://127.0.0.1:3030` (`GET /v1/models`) |
+| Explorer | [machines.peaq.xyz](https://machines.peaq.xyz/machine/89559941402598656218897526255035006056145711259135012725567383558333737842803) |
+| Activation tx | [peaqscan](https://peaq.subscan.io/tx/0x5f8383e6871f86fc5952128c96b5875e737c448edccc5ff47d5232e5900d6460) |
+
+QVAC is registered with `PUT /machines/:machId/runtime-endpoints/qvac`. Hosted orchestration cannot actually probe localhost; loopback is for a laptop-side demo. A public or tunnel URL is required if peaqOS should call the runtime from the cloud.
+
+## Two payment rails
+
+1. **LAN (offline after models are cached).** Youbot → machine-agent → EIP-191 intent ([`@tetherto/wdk-wallet-evm`](packages/wallet)) → gateway `POST /infer`. Needs a BIP-39 `MACHINE_WALLET_MNEMONIC` and a stable `GATEWAY_PAYEE_ADDRESS`. No Sepolia ETH required for the kiosk.
+2. **Online.** Scale USDT orders on peaq (Machine Market) after agent pairing. Optional Sepolia test USDT via [`pnpm settlement`](packages/settlement) is a separate WDK broadcast (`SEPOLIA_RPC`, `USDT_CONTRACT`).
+
+Do not put the peaq private key in `MACHINE_WALLET_MNEMONIC`. WDK wants a seed phrase; peaqOS wants `PEAQOS_PRIVATE_KEY`.
 
 ## Prerequisites
 
-- Node.js 22.17+ (QVAC worker; `nvm use 22.23.4` works on this machine)
+- Node.js 22.17+ (`nvm use 22.23.4` is fine)
 - pnpm 10.x (`corepack prepare pnpm@10.34.5 --activate`)
-- Webots R2025a (optional, for visual demo)
+- Webots R2025a for the factory scene
+- Python 3.10+ and `peaq-os-cli` 0.0.14+ only if you will activate or talk to Machine Market (this repo uses a gitignored `.peaqos-env` on Windows)
 
 ## Setup
 
@@ -14,40 +75,60 @@ Private, offline AI inference marketplace for Nairobi warehouses — **QVAC** ga
 pnpm install
 pnpm -r build
 cp .env.example .env
-# Fill MACHINE_WALLET_MNEMONIC, GATEWAY_PRIVATE_KEY (or leave empty for ephemeral gateway key — copy address from logs)
-pnpm download-models   # online once
+# MACHINE_WALLET_MNEMONIC = real 12-word phrase
+# GATEWAY_PRIVATE_KEY = stable ethers key (empty means a new payee every start)
+pnpm download-models   # online once; Llama 3.2 1B Instruct Q4_0
 ```
 
-Start services (three terminals):
+Copy `gatewayAddress` from `GET http://127.0.0.1:3030/health` into `GATEWAY_PAYEE_ADDRESS` (must match `GATEWAY_PRIVATE_KEY`).
+
+For peaq: set `PEAQOS_PRIVATE_KEY` locally (never commit). After `peaqos activate`, set `MACHINE_ID` and `GATEWAY_DID` to the **same** robot DID. QVAC has no API key — `QVAC_ENABLED=1` and [`qvac.config.json`](qvac.config.json) are enough.
+
+Start:
 
 ```bash
-pnpm gateway              # QVAC local GGUF (llama-3.2-1b-instruct)
-pnpm machine-agent        # WDK payment intent + telemetry
-pnpm --filter @optimus/dashboard dev   # live decision feed
+pnpm gateway              # QVAC GGUF, /quote /infer /v1/models /v1/chat/completions
+pnpm machine-agent        # telemetry + WDK intent
+pnpm --filter @optimus/dashboard dev   # optional WS feed on :5173
 ```
 
-Copy `gatewayAddress` from `curl http://127.0.0.1:3030/health` into `.env` as `GATEWAY_PAYEE_ADDRESS`.
-
-**Webots kiosk demo:** gateway + machine-agent, then [worlds/pick_and_place.wbt](worlds/pick_and_place.wbt) → Play. The Youbot (no GPU) pays the **laptop / host QVAC gateway**; the Display shows model ready, DID, `source` (rules vs model), latency, USDT, and receipt. **peaq** logs are the `@optimus/peaq-setup` CLI (online cache), not the Webots console. See [docs/WEBOTS_CHANGES.md](docs/WEBOTS_CHANGES.md).
+**Webots:** keep gateway + machine-agent up, open [`worlds/pick_and_place.wbt`](worlds/pick_and_place.wbt), Play. Details and overlay troubleshooting: [`docs/WEBOTS_CHANGES.md`](docs/WEBOTS_CHANGES.md).
 
 ## Offline demo
 
-1. Run gateway + machine-agent on LAN.
-2. Disable Wi‑Fi.
-3. Trigger fault: `pnpm demo` or dashboard scenario button.
-4. `OPTIMUS_OFFLINE=1 pnpm offline-check` validates QVAC without network (after models cached).
+1. Gateway + machine-agent on LAN (models already cached).
+2. Disable WAN.
+3. `pnpm demo` or the dashboard scenario button, or Play in Webots.
+4. `OPTIMUS_OFFLINE=1 pnpm offline-check` proves QVAC without network.
+
+## Gateway HTTP
+
+| Path | Use |
+|------|-----|
+| `GET /health` | `qvacReady`, `modelAlias`, `gatewayDid` (robot DID), `gatewayAddress` |
+| `GET /v1/models` | peaqOS / OpenAI-shaped model list |
+| `POST /v1/chat/completions` | peaqOS execute path (no WDK body; Scale pays on-chain) |
+| `GET /quote` + `POST /infer` | LAN kiosk with WDK payment intent |
 
 ## Monorepo
+
+Ledger and agent cache are JSON under `./data/` (gitignored).
 
 | Package | Role |
 |---------|------|
 | `@optimus/shared` | Zod types + rules |
+| `@optimus/gateway` | Embedded `@qvac/sdk`, quotes, infer, chat completions |
+| `@optimus/machine-agent` | Telemetry, spend policy, WDK sign, `/telemetry` |
+| `@optimus/wallet` | `@tetherto/wdk-wallet-evm` (not `wdk-main` core) |
+| `@optimus/peaq-setup` | Online discovery cache for offline LAN |
+| `@optimus/settlement` | Optional Sepolia USDT broadcast |
+| `@optimus/dashboard` | Live decision feed |
 
-Ledger and agent cache use JSON files under `./data/` (no Visual Studio / node-gyp required on Windows).
-| `@optimus/gateway` | QVAC + `/quote` `/infer` |
-| `@optimus/machine-agent` | Telemetry, pay, infer |
-| `@optimus/wallet` | WDK adapter |
-| `@optimus/peaq-setup` | NETWORK setup |
-| `@optimus/settlement` | NETWORK WDK broadcast |
+## Docs
 
-Docs: [docs/](docs/).
+- [`docs/QVAC_INTEGRATION.md`](docs/QVAC_INTEGRATION.md)
+- [`docs/WDK_INTEGRATION.md`](docs/WDK_INTEGRATION.md)
+- [`docs/NETWORK_DEPENDENCIES.md`](docs/NETWORK_DEPENDENCIES.md)
+- [`docs/WEBOTS_CHANGES.md`](docs/WEBOTS_CHANGES.md) — kiosk Display, HUD, asset junctions on Windows
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/SUBMISSION.md`](docs/SUBMISSION.md)
