@@ -1,7 +1,12 @@
+.peaqos-env/
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
 *.key
+*.pem
+peaqos.log
 .peaq/
 .qvac/
 *.db

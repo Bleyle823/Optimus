@@ -213,7 +213,8 @@ def kiosk_payload(**extra):
         "qvacReady": False,
         "source": "rules",
         "latencyMs": 0,
-        "gatewayDid": os.environ.get("GATEWAY_DID", "did:peaq:gateway-local"),
+        "gatewayDid": os.environ.get("MACHINE_ID")
+        or os.environ.get("GATEWAY_DID", "did:peaq:pending"),
         "machineId": os.environ.get("MACHINE_ID", "peaqos:machine:demo"),
         "priceUsdt": "0.01",
         "settlement": "none",
@@ -283,9 +284,10 @@ def pay_for_inference():
             latencyMs=decision.get("latencyMs", 0),
             model=qvac.get("modelAlias") or quote.get("model") or "llama-3.2-1b-instruct",
             qvacReady=bool(qvac.get("ready")),
-            gatewayDid=quote.get("gatewayDid")
+            gatewayDid=os.environ.get("MACHINE_ID")
+            or quote.get("gatewayDid")
             or receipt.get("gatewayDid")
-            or os.environ.get("GATEWAY_DID", "did:peaq:gateway-local"),
+            or os.environ.get("GATEWAY_DID", "did:peaq:pending"),
             machineId=os.environ.get("MACHINE_ID", "peaqos:machine:demo"),
             priceUsdt=quote.get("priceUsdt") or receipt.get("amountUsdt") or "0.01",
             settlement=receipt.get("settlementStatus", "pending_settlement"),

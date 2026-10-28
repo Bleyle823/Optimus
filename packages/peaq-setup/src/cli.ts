@@ -17,7 +17,11 @@ const h = (await health.json()) as {
 };
 
 await adapter.cacheDiscovery({
-  gatewayDid: h.gatewayDid ?? process.env.GATEWAY_DID ?? "did:peaq:gateway-local",
+  gatewayDid:
+    process.env.MACHINE_ID ??
+    h.gatewayDid ??
+    process.env.GATEWAY_DID ??
+    "did:peaq:pending",
   gatewayBaseUrl: gatewayUrl,
   priceUsdt: process.env.GATEWAY_PRICE_USDT ?? "0.01",
   mcrScore: 0,

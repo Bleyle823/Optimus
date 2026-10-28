@@ -71,6 +71,45 @@ export async function buildServer() {
     ],
   }));
 
+  app.post("/v1/chat/completions", async (req, reply) => {
+    if (!modelEnabled || !qvac.isReady()) {
+      return reply.code(503).send({ error: "qvac not ready" });
+    }
+    const body = req.body as {
+      messages?: Array<{ role?: string; content?: string }>;
+      model?: string;
+    };
+    const messages = Array.isArray(body?.messages) ? body.messages : [];
+    const system = messages
+      .filter((m) => m.role === "system")
+      .map((m) => m.content ?? "")
+      .join("\n");
+    const user = messages
+      .filter((m) => m.role === "user")
+      .map((m) => m.content ?? "")
+      .join("\n");
+    if (!user) {
+      return reply.code(400).send({ error: "messages must include a user turn" });
+    }
+    const text = await qvac.complete({
+      system: system || "You are a local QVAC assistant.",
+      user,
+    });
+    return {
+      id: `chatcmpl-${crypto.randomUUID()}`,
+      object: "chat.completion",
+      created: Math.floor(Date.now() / 1000),
+      model: body.model ?? qvac.getModelAlias(),
+      choices: [
+        {
+          index: 0,
+          message: { role: "assistant", content: text },
+          finish_reason: "stop",
+        },
+      ],
+    };
+  });
+
   app.get("/quote", async (req, reply) => {
     const task = (req.query as { task?: string }).task;
     const parsedTask = quoteTaskSchema.safeParse(task);
