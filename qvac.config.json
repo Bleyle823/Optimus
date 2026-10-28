@@ -1,0 +1,6 @@
+{
+  "loggerConsoleOutput": true,
+  "loggerLevel": "info",
+  "rpcInitTimeoutMs": 120000,
+  "registryStreamTimeoutMs": 600000
+}

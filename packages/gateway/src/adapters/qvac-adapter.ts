@@ -61,8 +61,11 @@ export function createQvacAdapter(modelEnv?: string): QvacAdapter {
         await this.assessFit();
         modelId = await loadModel({
           modelSrc,
+          fallbackSrc:
+            process.env.QVAC_FALLBACK_SRC ??
+            "https://huggingface.co/unsloth/Llama-3.2-1B-Instruct-GGUF/resolve/b69aef112e9f895e6f98d7ae0949f72ff09aa401/Llama-3.2-1B-Instruct-Q4_0.gguf",
           onProgress: (p) => {
-            if (p.percentage >= 100 || p.percentage % 25 < 1) {
+            if (p.percentage >= 100 || Math.floor(p.percentage) % 25 === 0) {
               console.info(
                 `[QvacAdapter] download ${p.percentage.toFixed(0)}%`,
               );
