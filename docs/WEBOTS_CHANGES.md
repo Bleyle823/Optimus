@@ -10,7 +10,7 @@
 
 ## Laptop kiosk demo (drive → pay → pick)
 
-The scene laptop (`DEF OPTIMUS_LAPTOP`) is the **machine terminal**. Its controller **`optimus_kiosk`** polls [`data/kiosk-status.json`](../data/kiosk-status.json) (written by `optimus_robot`; the file is gitignored at runtime) and draws quote/receipt text on the built-in `display` device.
+The scene laptop (`DEF OPTIMUS_LAPTOP`) is the **nearby QVAC gateway terminal** (Youbot has no GPU). Its controller **`optimus_kiosk`** polls [`data/kiosk-status.json`](../data/kiosk-status.json) and draws **live local model runtime**: `llama-3.2-1b-instruct`, `qvacReady`, `source` (`model` vs `rules`), `latencyMs`, `gatewayDid`, USDT quote, and truncated `receiptId`.
 
 ```mermaid
 flowchart LR
@@ -27,7 +27,7 @@ flowchart LR
 
 1. Start **gateway** + **machine-agent** on the host; set valid `MACHINE_WALLET_MNEMONIC` and `GATEWAY_PAYEE_ADDRESS` in `.env`.
 2. Open [worlds/pick_and_place.wbt](../worlds/pick_and_place.wbt) — Youbot uses controller **`optimus_robot`** (already set in the world file).
-3. Press Play: Youbot drives to the kiosk (`GPS` + `InertialUnit`), pays (agent → WDK-signed intent → gateway `/infer`), kiosk shows status/quote/receipt, then the benchmark pick-and-place runs.
+3. Press Play: Youbot drives to the laptop, pays (agent → WDK-signed intent → gateway `/infer` on this host’s QVAC GGUF), the Display shows model / DID / source / latency / receipt, then pick-and-place runs.
 
 **Env (Webots controller):** `MACHINE_AGENT_URL` (default `http://127.0.0.1:4040/telemetry`), `MACHINE_ID`, `OPTIMUS_CONTEXT`. Optional: `KIOSK_TARGET_X/Y` (defaults `-2.10`, `-1.15` — north of the 0.6 m crate). After payment the Youbot crab-walks back to the benchmark spawn `(-2.4, 0)`, then the conveyor leg is the original 520-step drive at 7 rad/s. The laptop lid runs `optimus_kiosk` and reads `data/kiosk-status.json` onto its built-in `display`.
 
@@ -39,8 +39,8 @@ flowchart LR
 
 | Surface | How it updates |
 |---------|----------------|
-| Laptop **Display** (620×400) | Painted by `optimus_kiosk`. The 3D-view **cyan Display overlay** is restored in [worlds/.pick_and_place.wbproj](../worlds/.pick_and_place.wbproj) (`laptop:display` visible). |
-| 3D HUD labels | Kiosk status, Youbot / cube / laptop world poses, Metrics reminder (`setLabel`). |
+| Laptop **Display** (620×400) | Live **QVAC local** runtime (model alias, ready, DID, source, latency, USDT, receipt). Cyan overlay in [worlds/.pick_and_place.wbproj](../worlds/.pick_and_place.wbproj). |
+| 3D HUD labels | `QVAC llama-3.2-1b-instruct \| source \| Nms`, Youbot / cube / laptop poses. |
 | Benchmark robot window | `WorldInfo.window` and `PickAndPlaceBenchmark.window` = `pick_and_place` (Overview / Metrics / Instructions). |
 | Generic robot windows | Youbot, laptop, conveyor belt, Jetson Nano use `window "<generic>"`. Perspective `robotWindow:` opens them on load. |
 | Factory logo | Static `DEF LOGO` texture, not a Display. |
@@ -55,6 +55,23 @@ Do not use MCP **Save World** after Play: it writes runtime poses (cube, conveyo
 2. **Status file.** Default `data/kiosk-status.json` (gitignored). Override with `OPTIMUS_KIOSK_STATUS_PATH` or `OPTIMUS_REPO_ROOT`. The Youbot flushes/fsyncs writes so Windows sees them immediately.
 3. **Payment text.** Start gateway + machine-agent; otherwise the kiosk shows idle then “Agent unreachable”.
 4. **Benchmark Metrics tab empty.** Confirm `PickAndPlaceBenchmark` is in the world and the console does not say `robotbenchmark module not found` (needs `WEBOTS_HOME` / project junctions as below).
+
+## End-to-end terminals (what prints where)
+
+Start **three** processes, then Webots Play. The laptop overlay shows **this machine’s** QVAC model, not peaq RPC.
+
+| Surface | Command | What you see |
+|---------|---------|----------------|
+| **QVAC load / infer** | `pnpm gateway` | `[QvacAdapter]` fit/download, Fastify `/quote` `/infer` |
+| **Health / DID / model** | `curl http://127.0.0.1:3030/health` | `qvacReady`, `modelAlias`, `gatewayDid`, `gatewayAddress` |
+| **WDK pay** | `pnpm machine-agent` | Quote, signed intent, `/telemetry` |
+| **Decision feed** | `pnpm --filter @optimus/dashboard dev` | WS `decision.source` (`rules` vs `model`), receipt DID |
+| **peaq (online)** | `@optimus/peaq-setup` CLI | `Cached gateway discovery for offline use` — **the peaq console** |
+| **On-chain USDT (online)** | `@optimus/settlement` | Tx hash when not `OPTIMUS_OFFLINE` |
+| **Webots console** | Controllers | Nav / kiosk path — not peaq RPC |
+| **Laptop Display** | Overlay | Local GGUF alias, DID, source, latency, quote, receipt |
+
+peaq DIDs in the overlay (`did:peaq:gateway-local`) are JSON on the LAN. Machine Market / on-chain coordination is the **online** setup and settlement path only.
 
 ## Asset path (dark scene)
 
