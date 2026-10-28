@@ -35,6 +35,27 @@ flowchart LR
 
 **Logo:** `DEF LOGO` on the factory machine uses [worlds/textures/factory_logo.png](../worlds/textures/factory_logo.png) instead of the sample `webots://` ladybug texture. The PNG background is transparent. The plane size is `1.16 0.25`; translation is `-0.76 0.138 0.79`.
 
+## Overlays
+
+| Surface | How it updates |
+|---------|----------------|
+| Laptop **Display** (620×400) | Painted by `optimus_kiosk`. The 3D-view **cyan Display overlay** is restored in [worlds/.pick_and_place.wbproj](../worlds/.pick_and_place.wbproj) (`laptop:display` visible). |
+| 3D HUD labels | Kiosk status, Youbot / cube / laptop world poses, Metrics reminder (`setLabel`). |
+| Benchmark robot window | `WorldInfo.window` and `PickAndPlaceBenchmark.window` = `pick_and_place` (Overview / Metrics / Instructions). |
+| Generic robot windows | Youbot, laptop, conveyor belt, Jetson Nano use `window "<generic>"`. Perspective `robotWindow:` opens them on load. |
+| Factory logo | Static `DEF LOGO` texture, not a Display. |
+
+Reload the world after changing `.wbproj`. In the 3D view: **Overlays** menu → show Display (and Camera / RangeFinder if those devices exist). Do not hide **View → Overlay**.
+
+Do not use MCP **Save World** after Play: it writes runtime poses (cube, conveyor, `mcp_bridge`) and breaks pick-and-place.
+
+## Troubleshooting (laptop screen blank)
+
+1. **Lid vs Display.** The proto hinge has no motor; gravity can fold the lid. Status still draws on the `display` device and on the HUD labels. Look at the inner lid face and the top-left overlay.
+2. **Status file.** Default `data/kiosk-status.json` (gitignored). Override with `OPTIMUS_KIOSK_STATUS_PATH` or `OPTIMUS_REPO_ROOT`. The Youbot flushes/fsyncs writes so Windows sees them immediately.
+3. **Payment text.** Start gateway + machine-agent; otherwise the kiosk shows idle then “Agent unreachable”.
+4. **Benchmark Metrics tab empty.** Confirm `PickAndPlaceBenchmark` is in the world and the console does not say `robotbenchmark module not found` (needs `WEBOTS_HOME` / project junctions as below).
+
 ## Asset path (dark scene)
 
 [worlds/pick_and_place.wbt](../worlds/pick_and_place.wbt) is the R2025a template and was not rewritten. It loads the Youbot, factory, floor, and textures through `webots://` URLs, which resolve only under `C:\Program Files\Webots\projects`. That install shipped without the project protos, so Webots skipped `Youbot`, `TexturedBackground`, `Floor`, and the factory nodes and the view stayed black.
