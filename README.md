@@ -4,8 +4,8 @@ Private, offline AI inference marketplace for Nairobi warehouses — **QVAC** ga
 
 ## Prerequisites
 
-- Node.js 22+ (QVAC recommends 22.17+)
-- pnpm 9+
+- Node.js 22.17+ (QVAC worker; `nvm use 22.23.4` works on this machine)
+- pnpm 10.x (`corepack prepare pnpm@10.34.5 --activate`)
 - Webots R2025a (optional, for visual demo)
 
 ## Setup

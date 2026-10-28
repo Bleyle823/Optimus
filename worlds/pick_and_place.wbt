@@ -18,6 +18,8 @@ EXTERNPROTO "webots://projects/objects/factory/tools/protos/PlatformCart.proto"
 EXTERNPROTO "webots://projects/robots/kuka/youbot/protos/KukaBox.proto"
 EXTERNPROTO "webots://projects/samples/robotbenchmark/pick_and_place/protos/PickAndPlaceBenchmark.proto"
 EXTERNPROTO "webots://projects/robots/kuka/youbot/protos/Youbot.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/devices/nvidia/protos/JetsonNano.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/computers/protos/Laptop.proto"
 
 WorldInfo {
   info [
@@ -59,8 +61,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.049873692006054064 0.8801183656218324 -0.47212739524501207 0.36604708299982824
-  position -7.59905521344036 1.1022023790656814 2.888974815543479
+  orientation -0.29255500155207637 0.3053892780768353 0.9061726987183922 1.4568793735191863
+  position -3.1563438718037533 -5.742137648184949 3.4211736407518956
   exposure 1.5
 }
 TexturedBackground {
@@ -90,6 +92,11 @@ Floor {
     roughness 1
     metalness 0
   }
+}
+WoodenBox {
+  translation -1.34096 -2.06302 0.3
+  rotation 0 0 -1 1.571421196638078
+  name "wooden box(4)"
 }
 DEF WALL Solid {
   translation 0 6 2.5
@@ -523,18 +530,21 @@ DEF MACHINERY Solid {
       ]
     }
     DEF LOGO Pose {
-      translation -0.76 -0.21 0.79
+      translation -0.76 0.138 0.79
       rotation 0.577349935856137 -0.577349935856137 -0.5773509358560258 2.09439
       children [
         Shape {
           appearance PBRAppearance {
             baseColorMap ImageTexture {
               url [
-                "webots://projects/samples/robotbenchmark/pick_and_place/worlds/textures/factory_logo.png"
+                "textures/factory_logo.png"
               ]
             }
+            roughness 1
+            metalness 0
           }
           geometry Plane {
+            size 1.16 0.25
           }
         }
       ]
@@ -643,6 +653,10 @@ DEF MACHINERY Solid {
       USE FOOT4
     ]
   }
+}
+Laptop {
+  translation -1.42 -2.08 0.6
+  rotation 0 0 1 1.5708
 }
 PlatformCart {
   translation -2.3649928 1.0055135 0
@@ -839,4 +853,7 @@ Youbot {
   translation -2.4 0 0.10761028
   rotation 0.04953177831291063 -0.02003589122744673 0.9985715627835006 -0.0020853071795858824
   controller "pick_and_place"
+}
+JetsonNano {
+  translation -1.14 -2 0.6
 }
