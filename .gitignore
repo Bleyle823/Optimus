@@ -13,3 +13,5 @@ data/
 coverage/
 .vite/
 packages/dashboard/dist/
+worlds/.*.wbproj
+worlds/.pick_and_place.jpg

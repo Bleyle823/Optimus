@@ -9,6 +9,8 @@
 
 To demo: set the Youbot controller to `optimus_robot` in the world file or Webots UI.
 
+**Logo:** `DEF LOGO` on the factory machine uses [worlds/textures/factory_logo.png](../worlds/textures/factory_logo.png) instead of the sample `webots://` ladybug texture. The PNG background is transparent. The plane size is `1.16 0.25`; translation is `-0.76 0.138 0.79`.
+
 ## Asset path (dark scene)
 
 [worlds/pick_and_place.wbt](../worlds/pick_and_place.wbt) is the R2025a template and was not rewritten. It loads the Youbot, factory, floor, and textures through `webots://` URLs, which resolve only under `C:\Program Files\Webots\projects`. That install shipped without the project protos, so Webots skipped `Youbot`, `TexturedBackground`, `Floor`, and the factory nodes and the view stayed black.
