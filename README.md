@@ -28,7 +28,7 @@ pnpm --filter @optimus/dashboard dev
 
 Copy `gatewayAddress` from `curl http://127.0.0.1:3030/health` into `.env` as `GATEWAY_PAYEE_ADDRESS`.
 
-Webots: open [worlds/pick_and_place.wbt](worlds/pick_and_place.wbt), set controller to `optimus_robot`.
+**Webots kiosk demo:** start gateway + machine-agent, then open [worlds/pick_and_place.wbt](worlds/pick_and_place.wbt) and press Play. The Youbot drives to the laptop, pays for inference (kiosk `Display` updates), then runs pick-and-place. See [docs/WEBOTS_CHANGES.md](docs/WEBOTS_CHANGES.md).
 
 ## Offline demo
 
