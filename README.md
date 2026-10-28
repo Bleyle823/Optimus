@@ -21,14 +21,14 @@ pnpm download-models   # online once
 Start services (three terminals):
 
 ```bash
-pnpm gateway
-pnpm machine-agent
-pnpm --filter @optimus/dashboard dev
+pnpm gateway              # QVAC local GGUF (llama-3.2-1b-instruct)
+pnpm machine-agent        # WDK payment intent + telemetry
+pnpm --filter @optimus/dashboard dev   # live decision feed
 ```
 
 Copy `gatewayAddress` from `curl http://127.0.0.1:3030/health` into `.env` as `GATEWAY_PAYEE_ADDRESS`.
 
-**Webots kiosk demo:** start gateway + machine-agent, then open [worlds/pick_and_place.wbt](worlds/pick_and_place.wbt) and press Play. The Youbot drives to the laptop, pays for inference (kiosk `Display` updates), then runs pick-and-place. See [docs/WEBOTS_CHANGES.md](docs/WEBOTS_CHANGES.md).
+**Webots kiosk demo:** gateway + machine-agent, then [worlds/pick_and_place.wbt](worlds/pick_and_place.wbt) → Play. The Youbot (no GPU) pays the **laptop / host QVAC gateway**; the Display shows model ready, DID, `source` (rules vs model), latency, USDT, and receipt. **peaq** logs are the `@optimus/peaq-setup` CLI (online cache), not the Webots console. See [docs/WEBOTS_CHANGES.md](docs/WEBOTS_CHANGES.md).
 
 ## Offline demo
 

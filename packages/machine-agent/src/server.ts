@@ -5,6 +5,7 @@ import {
   decideWithRules,
   type Decision,
   type TelemetryReading,
+  type Receipt,
 } from "@optimus/shared";
 import { createWalletAdapter } from "@optimus/wallet";
 import { AgentStore } from "./cache.js";
@@ -71,22 +72,52 @@ async function resolveGatewayUrl(): Promise<string> {
   return discoverGatewayUrl(config.GATEWAY_URL);
 }
 
+type QuoteSlice = {
+  quoteId?: string;
+  gatewayDid: string;
+  priceUsdt: string;
+  model?: string;
+};
+
+type QvacSlice = { ready: boolean; modelAlias: string };
+
+type InferResult = {
+  decision: Decision;
+  usedGateway: boolean;
+  quote?: QuoteSlice;
+  receipt?: Receipt;
+  qvac: QvacSlice;
+};
+
+async function fetchGatewayHealth(baseUrl: string): Promise<QvacSlice> {
+  try {
+    const res = await fetch(`${baseUrl}/health`);
+    if (!res.ok) throw new Error("health failed");
+    const health = (await res.json()) as {
+      qvacReady?: boolean;
+      modelAlias?: string;
+    };
+    return {
+      ready: Boolean(health.qvacReady),
+      modelAlias: health.modelAlias ?? "llama-3.2-1b-instruct",
+    };
+  } catch {
+    return { ready: false, modelAlias: "llama-3.2-1b-instruct" };
+  }
+}
+
 async function inferAtGateway(
   reading: TelemetryReading,
   hist: TelemetryReading[],
-): Promise<{ decision: Decision; usedGateway: boolean }> {
+): Promise<InferResult> {
   const baseUrl = await resolveGatewayUrl();
+  const qvac = await fetchGatewayHealth(baseUrl);
   try {
     const quoteRes = await fetch(
       `${baseUrl}/quote?task=anomaly_judgment`,
     );
     if (!quoteRes.ok) throw new Error("quote failed");
-    const quote = (await quoteRes.json()) as {
-      quoteId: string;
-      gatewayDid: string;
-      priceUsdt: string;
-      nonce: string;
-    };
+    const quote = (await quoteRes.json()) as QuoteSlice & { nonce: string };
 
     const policyCheck = checkSpendPolicy(
       policy,
@@ -104,6 +135,8 @@ async function inferAtGateway(
           latencyMs: 0,
         },
         usedGateway: false,
+        quote,
+        qvac,
       };
     }
 
@@ -118,7 +151,7 @@ async function inferAtGateway(
         telemetry: reading,
         history: hist,
         paymentIntent: await wallet.signPaymentIntent({
-          quoteId: quote.quoteId,
+          quoteId: quote.quoteId ?? "",
           payerAddress,
           payeeAddress,
           amountUsdt: quote.priceUsdt,
@@ -132,11 +165,24 @@ async function inferAtGateway(
       const errText = await inferRes.text();
       throw new Error(errText);
     }
-    const body = (await inferRes.json()) as { decision: Decision };
+    const body = (await inferRes.json()) as {
+      decision: Decision;
+      receipt?: Receipt;
+    };
     store.addSpend(Number(quote.priceUsdt));
-    return { decision: body.decision, usedGateway: true };
+    return {
+      decision: body.decision,
+      usedGateway: true,
+      quote,
+      receipt: body.receipt,
+      qvac,
+    };
   } catch {
-    return { decision: localFallback(reading, hist), usedGateway: false };
+    return {
+      decision: localFallback(reading, hist),
+      usedGateway: false,
+      qvac,
+    };
   }
 }
 
@@ -177,14 +223,28 @@ app.post("/telemetry", async (req, reply) => {
     (reading.metrics.vibrationMmS ?? 0) > 7;
 
   let decision: Decision;
+  let quote: QuoteSlice | undefined;
+  let receipt: Receipt | undefined;
+  let qvac: QvacSlice = {
+    ready: false,
+    modelAlias: "llama-3.2-1b-instruct",
+  };
   if (suspicious || needsModel) {
     const result = await inferAtGateway(reading, history.slice(0, -1));
     decision = result.decision;
+    quote = result.quote;
+    receipt = result.receipt;
+    qvac = result.qvac;
   } else {
     decision = localFallback(reading, history.slice(0, -1));
+    try {
+      qvac = await fetchGatewayHealth(await resolveGatewayUrl());
+    } catch {
+      /* keep defaults */
+    }
   }
 
-  return { decision, telemetry: reading };
+  return { decision, telemetry: reading, quote, receipt, qvac };
 });
 
 app.post("/fault", async (req, reply) => {
@@ -221,6 +281,9 @@ app.post("/cache/discovery", async (req) => {
   return { ok: true };
 });
 
-app.get("/health", async () => ({ ok: true, machineId: config.MACHINE_ID }));
+app.get("/health", async () => {
+  const qvac = await fetchGatewayHealth(await resolveGatewayUrl());
+  return { ok: true, machineId: config.MACHINE_ID, qvac };
+});
 
 app.listen({ port: config.MACHINE_AGENT_PORT, host: config.MACHINE_AGENT_HOST });
