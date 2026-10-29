@@ -214,6 +214,32 @@ app.post("/telemetry", async (req, reply) => {
   history.push(reading);
   if (history.length > 20) history.shift();
 
+  const decision = localFallback(reading, history.slice(0, -1));
+  let qvac: QvacSlice = {
+    ready: false,
+    modelAlias: "llama-3.2-1b-instruct",
+  };
+  try {
+    qvac = await fetchGatewayHealth(await resolveGatewayUrl());
+  } catch {
+    /* keep defaults */
+  }
+
+  return { decision, telemetry: reading, qvac };
+});
+
+/** Paid gateway infer — Webots kiosk only (optimus_robot pay_for_inference). */
+app.post("/kiosk/infer", async (req, reply) => {
+  const parsed = telemetryReadingSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return reply.code(400).send({ error: parsed.error.flatten() });
+  }
+  let reading = { ...parsed.data, machineId: config.MACHINE_ID };
+  reading = applyFaults(reading);
+  store.logTelemetry(JSON.stringify(reading));
+  history.push(reading);
+  if (history.length > 20) history.shift();
+
   const needsModel =
     reading.metrics.tempC !== undefined &&
     reading.context.toLowerCase().includes("cold");
@@ -222,29 +248,20 @@ app.post("/telemetry", async (req, reply) => {
     (reading.metrics.batteryPct ?? 100) < 30 ||
     (reading.metrics.vibrationMmS ?? 0) > 7;
 
-  let decision: Decision;
-  let quote: QuoteSlice | undefined;
-  let receipt: Receipt | undefined;
-  let qvac: QvacSlice = {
-    ready: false,
-    modelAlias: "llama-3.2-1b-instruct",
-  };
-  if (suspicious || needsModel) {
-    const result = await inferAtGateway(reading, history.slice(0, -1));
-    decision = result.decision;
-    quote = result.quote;
-    receipt = result.receipt;
-    qvac = result.qvac;
-  } else {
-    decision = localFallback(reading, history.slice(0, -1));
-    try {
-      qvac = await fetchGatewayHealth(await resolveGatewayUrl());
-    } catch {
-      /* keep defaults */
-    }
+  if (!needsModel && !suspicious) {
+    return reply.code(400).send({
+      error: "readings not eligible for paid anomaly_judgment at kiosk",
+    });
   }
 
-  return { decision, telemetry: reading, quote, receipt, qvac };
+  const result = await inferAtGateway(reading, history.slice(0, -1));
+  return {
+    decision: result.decision,
+    telemetry: reading,
+    quote: result.quote,
+    receipt: result.receipt,
+    qvac: result.qvac,
+  };
 });
 
 app.post("/fault", async (req, reply) => {
