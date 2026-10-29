@@ -1,5 +1,6 @@
 import { createQvacAdapter } from "@optimus/gateway";
 
+process.env.QVAC_ALLOW_NETWORK = "1";
 const qvac = createQvacAdapter(process.env.QVAC_MODEL);
 console.info("Downloading / loading QVAC model (cached for offline use)...");
 await qvac.assessFit();
