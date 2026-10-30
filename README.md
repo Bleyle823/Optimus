@@ -3,7 +3,7 @@
 <p align="center">
   <img src="worlds/textures/factory_logo.png" alt="Tether" width="360" />
 </p>
-Optimus is a robotics-as-a-service application built on **QVAC** and **peaq**. A factory robot needs private judgments (is the cold room safe, is the motor hot, is vibration a fault), but it has no GPU to run a model itself. **QVAC** on a laptop beside the line runs a local model, so the readings never leave the factory network. The robot holds its own keys through Tether’s Wallet Development Kit (**WDK**) and pays for each judgment, and **peaq** holds the robot’s on-chain identity (DID and Machine NFT).
+Optimus is a robotics-as-a-service application built on QVAC and peaq. A factory robot needs private judgments (is the cold room safe, is the motor hot, is vibration a fault), but it has no GPU to run a model itself. QVAC on a laptop beside the line runs a local model, so the readings never leave the factory network. The robot holds its own keys through Tether’s Wallet Development Kit (**WDK**) and pays for each judgment, and **peaq** holds the robot’s on-chain identity (DID and Machine NFT).
 
 A warehouse robot already produces the data a judgment needs: temperature, motor heat, and vibration. Sending that stream to a cloud model would export the factory’s data. **QVAC** avoids this by sitting on hardware the factory controls. It loads a local GGUF model (here, **Llama 3.2 1B Instruct, Q4_0**) and answers on the **LAN**. In this demo the gateway is the laptop in the Webots scene. It behaves like a Wi-Fi access point, except the service is **private inference**. Telemetry stays on the **LAN** and the result comes back to the robot.
 
