@@ -17,11 +17,20 @@ export interface QvacCompleteOptions {
   jsonObject?: boolean;
 }
 
+export interface QvacLoadSummary {
+  ready: boolean;
+  offline: boolean;
+  localPath: string | null;
+  error: string | null;
+  loadMs: number;
+}
+
 export interface QvacAdapter {
   load(): Promise<void>;
   unload(): Promise<void>;
   isReady(): boolean;
   getModelAlias(): string;
+  getLoadSummary(): QvacLoadSummary | null;
   assessFit(): Promise<void>;
   complete(opts: QvacCompleteOptions): Promise<string>;
 }
@@ -32,6 +41,7 @@ const LOCAL_MODEL_CONFIG = { ctx_size: 2048 };
 export function createQvacAdapter(modelEnv?: string): QvacAdapter {
   let modelId: string | null = null;
   let loadError: string | null = null;
+  let loadSummary: QvacLoadSummary | null = null;
   const registryModelSrc =
     modelEnv === "LLAMA_3_2_1B_INST_Q4_0" || !modelEnv
       ? LLAMA_3_2_1B_INST_Q4_0
@@ -66,13 +76,23 @@ export function createQvacAdapter(modelEnv?: string): QvacAdapter {
       return modelId !== null && loadError === null;
     },
 
+    getLoadSummary() {
+      return loadSummary;
+    },
+
     async load() {
       if (modelId) return;
+      const started = performance.now();
+      const offline = isQvacOfflineMode();
+      let localPath: string | null = null;
       try {
+        console.info(
+          `[QvacAdapter] loading ${offline ? "offline (local GGUF)" : "network (registry allowed)"}…`,
+        );
         await this.assessFit();
 
-        if (isQvacOfflineMode()) {
-          const localPath = resolveCachedGgufPath();
+        if (offline) {
+          localPath = resolveCachedGgufPath();
           if (!localPath) {
             throw new Error(
               `No local GGUF found for offline QVAC. ${offlineLoadHint()}`,
@@ -101,8 +121,25 @@ export function createQvacAdapter(modelEnv?: string): QvacAdapter {
           });
         }
         loadError = null;
+        loadSummary = {
+          ready: true,
+          offline,
+          localPath,
+          error: null,
+          loadMs: performance.now() - started,
+        };
+        console.info(
+          `[QvacAdapter] ready (${loadSummary.loadMs.toFixed(0)} ms) alias=${this.getModelAlias()}`,
+        );
       } catch (e) {
         loadError = e instanceof Error ? e.message : String(e);
+        loadSummary = {
+          ready: false,
+          offline,
+          localPath,
+          error: loadError,
+          loadMs: performance.now() - started,
+        };
         console.error("[QvacAdapter] load failed:", loadError);
         modelId = null;
       }

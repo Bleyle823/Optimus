@@ -1,3 +1,7 @@
+import { loadRepoEnv } from "@optimus/shared";
+
+loadRepoEnv();
+
 const base = process.env.GATEWAY_URL ?? "http://127.0.0.1:3030";
 const health = await fetch(`${base}/health`);
 const h = (await health.json()) as { gatewayAddress: string };

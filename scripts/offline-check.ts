@@ -1,3 +1,7 @@
+import { loadRepoEnv } from "@optimus/shared";
+
+loadRepoEnv();
+
 import { createQvacAdapter } from "@optimus/gateway";
 
 if (process.env.OPTIMUS_OFFLINE !== "1") {

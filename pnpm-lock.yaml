@@ -8,6 +8,12 @@ importers:
 
   .:
     devDependencies:
+      '@optimus/gateway':
+        specifier: workspace:*
+        version: link:packages/gateway
+      '@optimus/shared':
+        specifier: workspace:*
+        version: link:packages/shared
       '@types/node':
         specifier: ^22.10.0
         version: 22.20.5

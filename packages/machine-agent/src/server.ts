@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { z } from "zod";
+import { loadRepoEnv } from "@optimus/shared";
 import {
   telemetryReadingSchema,
   decideWithRules,
@@ -23,6 +24,8 @@ const envSchema = z.object({
   AGENT_DB_PATH: z.string().default("./data/agent.json"),
   CHAIN: z.string().default("sepolia"),
 });
+
+loadRepoEnv();
 
 const config = envSchema.parse(process.env);
 const store = new AgentStore(config.AGENT_DB_PATH);
@@ -177,7 +180,8 @@ async function inferAtGateway(
       receipt: body.receipt,
       qvac,
     };
-  } catch {
+  } catch (e) {
+    console.error("[machine-agent] gateway infer failed:", e);
     return {
       decision: localFallback(reading, hist),
       usedGateway: false,
@@ -255,6 +259,15 @@ app.post("/kiosk/infer", async (req, reply) => {
   }
 
   const result = await inferAtGateway(reading, history.slice(0, -1));
+  if (!result.receipt) {
+    return reply.code(502).send({
+      error: "paid infer did not return a receipt (check GATEWAY_PAYEE_ADDRESS, gateway logs, spend policy)",
+      decision: result.decision,
+      usedGateway: result.usedGateway,
+      quote: result.quote,
+      qvac: result.qvac,
+    });
+  }
   return {
     decision: result.decision,
     telemetry: reading,

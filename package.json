@@ -13,6 +13,12 @@
     "offline-check": "tsx scripts/offline-check.ts",
     "demo": "tsx scripts/demo.ts",
     "smoke-gateway": "tsx scripts/smoke-gateway.ts",
+    "smoke-e2e": "tsx scripts/smoke-e2e.ts",
+    "show-infer": "tsx scripts/show-infer.ts",
+    "watch-infer": "tsx scripts/show-infer.ts --watch",
+    "online": "tsx scripts/online.ts",
+    "prepare-online": "tsx scripts/online.ts --prepare-only",
+    "settlement:once": "pnpm --filter @optimus/settlement run build && tsx scripts/settlement-once.ts",
     "gateway": "pnpm --filter @optimus/gateway run start",
     "machine-agent": "pnpm --filter @optimus/machine-agent run start",
     "settlement": "pnpm --filter @optimus/settlement run start"
@@ -28,6 +34,8 @@
     ]
   },
   "devDependencies": {
+    "@optimus/gateway": "workspace:*",
+    "@optimus/shared": "workspace:*",
     "@types/node": "^22.10.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

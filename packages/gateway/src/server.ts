@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { loadRepoEnv } from "@optimus/shared";
 import Fastify from "fastify";
 import websocket from "@fastify/websocket";
 import { Bonjour } from "bonjour-service";
@@ -13,7 +14,13 @@ import {
 import { loadGatewayConfig } from "./config.js";
 import { GatewayLedger } from "./ledger.js";
 import { decide } from "./decide.js";
-import { createQvacAdapter } from "./adapters/qvac-adapter.js";
+import {
+  createQvacAdapter,
+  type QvacLoadSummary,
+} from "./adapters/qvac-adapter.js";
+import { isQvacOfflineMode } from "./adapters/qvac-local.js";
+
+loadRepoEnv();
 
 const config = loadGatewayConfig();
 mkdirSync(dirname(config.GATEWAY_DB_PATH), { recursive: true });
@@ -46,8 +53,41 @@ async function signReceiptPayload(payload: string): Promise<string> {
   return gatewayWallet.signMessage(payload);
 }
 
+function logGatewayReady(summary: QvacLoadSummary | null) {
+  if (!modelEnabled) {
+    console.info("[gateway] QVAC disabled (QVAC_ENABLED=0)");
+    return;
+  }
+  if (!summary) {
+    console.info("[gateway] QVAC load summary unavailable");
+    return;
+  }
+  if (summary.ready) {
+    const pathLine = summary.localPath
+      ? `\n  gguf     ${summary.localPath}`
+      : "";
+    console.info(
+      `[gateway] QVAC ready — ${summary.offline ? "offline" : "network"} local model, ${summary.loadMs.toFixed(0)} ms, alias ${qvac.getModelAlias()}${pathLine}`,
+    );
+  } else {
+    console.error(
+      `[gateway] QVAC NOT ready (${summary.loadMs.toFixed(0)} ms): ${summary.error ?? "unknown"}`,
+    );
+  }
+}
+
 export async function buildServer() {
-  const app = Fastify({ logger: true });
+  const app = Fastify({
+    logger: {
+      level: process.env.GATEWAY_LOG_LEVEL ?? "info",
+      serializers: {
+        req(req) {
+          return { method: req.method, url: req.url };
+        },
+      },
+    },
+    disableRequestLogging: process.env.GATEWAY_QUIET_REQUESTS === "1",
+  });
   await app.register(websocket);
 
   app.get("/health", async () => ({
@@ -221,9 +261,15 @@ export async function buildServer() {
 }
 
 export async function startGateway() {
+  console.info(
+    `[gateway] starting (QVAC offline mode: ${isQvacOfflineMode() ? "yes" : "no"})`,
+  );
   if (modelEnabled) {
     await qvac.load();
+  } else {
+    console.info("[gateway] skipping QVAC load — QVAC_ENABLED=0");
   }
+  const loadSummary = qvac.getLoadSummary?.() ?? null;
   const app = await buildServer();
   const bonjour = new Bonjour();
   bonjour.publish({
@@ -234,6 +280,7 @@ export async function startGateway() {
 
   await app.listen({ port: config.GATEWAY_PORT, host: config.GATEWAY_HOST });
   console.info(
-    `Gateway listening on ${config.GATEWAY_HOST}:${config.GATEWAY_PORT}; payee ${gatewayWallet.address}`,
+    `Gateway listening on ${config.GATEWAY_HOST}:${config.GATEWAY_PORT}; payee ${gatewayWallet.address}; ledger ${config.GATEWAY_DB_PATH}`,
   );
+  logGatewayReady(loadSummary);
 }

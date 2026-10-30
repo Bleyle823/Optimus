@@ -278,6 +278,16 @@ def pay_for_inference():
     receipt = body.get("receipt") or {}
     qvac = body.get("qvac") or {}
     receipt_id = str(receipt.get("receiptId", ""))
+    if not receipt_id:
+        emit_kiosk(
+            kiosk_payload(
+                status="critical",
+                reason="No receipt from agent",
+                action="Check machine-agent logs and .env (GATEWAY_PAYEE_ADDRESS)",
+            )
+        )
+        halt = True
+        return False
     emit_kiosk(
         kiosk_payload(
             status=decision.get("status", "ok"),

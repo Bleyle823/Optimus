@@ -40,7 +40,7 @@ Built for the **AI Yako** agentic-finance track: inference runs on hardware the 
 
 ## Demo flow (Webots)
 
-1. Start gateway + machine-agent (see [Setup](#setup)); optionally **one** [`pnpm settlement`](packages/settlement) worker for Sepolia receipts (do not run multiple settlement processes).
+1. Start gateway + machine-agent (see [Run locally](#run-locally)); optionally **one** [`pnpm settlement`](packages/settlement) worker for Sepolia receipts (do not run multiple settlement processes).
 2. Open [`worlds/pick_and_place.wbt`](worlds/pick_and_place.wbt) and **Play** — the Youbot drives to the laptop kiosk (overlay: pay for nearby QVAC inference).
 3. **One paid call:** the robot posts to machine-agent **`POST /kiosk/infer`** (not periodic `/telemetry`).
 4. Kiosk Display: quote → sign intent → infer → receipt (source, latency in ms, ~$0.01 test USDT, receipt id).
@@ -115,7 +115,36 @@ Do not put the peaq private key in `MACHINE_WALLET_MNEMONIC`. WDK wants a seed p
 - Webots R2025a for the factory scene
 - Python 3.10+ and `peaq-os-cli` 0.0.14+ only if you will activate or talk to Machine Market (this repo uses a gitignored `.peaqos-env` on Windows)
 
-## Setup
+## Run locally
+
+### One-time setup (internet on)
+
+1. Clone the repo and `cd` into the repo root.
+2. `corepack prepare pnpm@10.34.5 --activate` (if needed).
+3. `pnpm install` and `pnpm -r build`.
+4. Copy [`.env.example`](.env.example) to `.env`.
+5. `pnpm download-models` — caches **Llama 3.2 1B Instruct Q4_0** under `~/.qvac/models`.
+6. Edit `.env`: `QVAC_OFFLINE=1`, `QVAC_ENABLED=1`, your `MACHINE_WALLET_MNEMONIC`, a stable `GATEWAY_PRIVATE_KEY`, and an absolute `GATEWAY_DB_PATH` (for example `C:/Users/you/Optimus-main/data/gateway.json`). Set `SEPOLIA_RPC` and `USDT_CONTRACT` if you will test settlement.
+7. Start the gateway once (`pnpm gateway`), open `http://127.0.0.1:3030/health`, copy `gatewayAddress` into `GATEWAY_PAYEE_ADDRESS`, then restart the gateway.
+
+For peaq Machine Market: set `PEAQOS_PRIVATE_KEY` locally (never commit). After `peaqos activate`, set `MACHINE_ID` and `GATEWAY_DID` to the **same** robot DID.
+
+### Every demo run
+
+8. Optional after a break: `pnpm online` — re-queues failed receipts, resets kiosk status, runs one settlement pass (**needs internet**).
+9. **Terminal 1:** `pnpm gateway` — wait for `[QvacAdapter] offline load from` … `.gguf` and `qvacReady: true` on `/health`.
+10. **Terminal 2:** `pnpm machine-agent`.
+11. **Terminal 3 (optional, run exactly one):** `pnpm settlement` — Sepolia **test** USDT per receipt (**needs internet**).
+12. **Webots:** open [`worlds/pick_and_place.wbt`](worlds/pick_and_place.wbt), controller **`optimus_robot`**, **Play** — one paid kiosk infer, then pick (no second charge).
+13. **Without Webots:** `pnpm smoke-e2e`, or `$env:SMOKE_SETTLE='1'; pnpm smoke-e2e` on PowerShell for infer + settlement.
+
+**Offline (after the model is cached):** turn Wi‑Fi off, repeat steps 9–10 and 12 or 13; skip settlement until the network is back on.
+
+Helpers: `pnpm watch-infer`, `pnpm settlement:once`, `pnpm prepare-online`. Full troubleshooting: [`docs/MANUAL_TEST_GUIDE.md`](docs/MANUAL_TEST_GUIDE.md). Kiosk/HUD details: [`docs/WEBOTS_CHANGES.md`](docs/WEBOTS_CHANGES.md).
+
+## One-time setup
+
+Quick reference (same as steps 1–7 above):
 
 ```bash
 pnpm install
@@ -128,9 +157,9 @@ pnpm download-models   # online once; Llama 3.2 1B Instruct Q4_0
 
 Copy `gatewayAddress` from `GET http://127.0.0.1:3030/health` into `GATEWAY_PAYEE_ADDRESS` (must match `GATEWAY_PRIVATE_KEY`).
 
-For peaq: set `PEAQOS_PRIVATE_KEY` locally (never commit). After `peaqos activate`, set `MACHINE_ID` and `GATEWAY_DID` to the **same** robot DID. QVAC has no API key — `QVAC_ENABLED=1` and [`qvac.config.json`](qvac.config.json) are enough.
+QVAC has no API key — `QVAC_ENABLED=1` and [`qvac.config.json`](qvac.config.json) are enough.
 
-Start:
+Start services (see [Run locally](#run-locally) for the full step list):
 
 ```bash
 pnpm gateway              # QVAC GGUF, /quote /infer /v1/models /v1/chat/completions
@@ -139,7 +168,7 @@ pnpm settlement           # optional: one process, Sepolia test USDT per receipt
 pnpm --filter @optimus/dashboard dev   # optional WS feed on :5173
 ```
 
-**Webots:** keep gateway + machine-agent up, open [`worlds/pick_and_place.wbt`](worlds/pick_and_place.wbt), Play. Details and overlay troubleshooting: [`docs/WEBOTS_CHANGES.md`](docs/WEBOTS_CHANGES.md).
+**Webots:** keep gateway + machine-agent up, open [`worlds/pick_and_place.wbt`](worlds/pick_and_place.wbt), Play.
 
 ## Offline demo
 
@@ -222,4 +251,5 @@ Ledger and agent cache are JSON under `./data/` (gitignored).
 - [`docs/NETWORK_DEPENDENCIES.md`](docs/NETWORK_DEPENDENCIES.md)
 - [`docs/WEBOTS_CHANGES.md`](docs/WEBOTS_CHANGES.md) — kiosk Display, HUD, asset junctions on Windows
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/HACKATHON_WRITEUP.md`](docs/HACKATHON_WRITEUP.md) — submission narrative with screenshots
 - [`docs/SUBMISSION.md`](docs/SUBMISSION.md)

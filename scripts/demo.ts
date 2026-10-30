@@ -1,3 +1,7 @@
+import { loadRepoEnv } from "@optimus/shared";
+
+loadRepoEnv();
+
 const agentUrl = process.env.MACHINE_AGENT_URL ?? "http://127.0.0.1:4040";
 
 await fetch(`${agentUrl}/fault`, {
