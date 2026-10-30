@@ -38,23 +38,6 @@ Same shape as the public [Unitree G1 + QVAC](https://www.peaq.xyz/blog/peaq-brin
 
 Built for the **AI Yako** agentic-finance track: inference runs on hardware the factory controls (“your AI”), not a remote API. The laptop Display ([`optimus_kiosk`](controllers/optimus_kiosk/optimus_kiosk.py)) and the cyan HUD in the Webots 3D view show QVAC status — model alias, robot DID, quote, receipt — so the story reads even if the lid is closed.
 
-## Demo flow (Webots)
-
-1. Start gateway + machine-agent (see [Run locally](#run-locally)); optionally **one** [`pnpm settlement`](packages/settlement) worker for Sepolia receipts (do not run multiple settlement processes).
-2. Open [`worlds/pick_and_place.wbt`](worlds/pick_and_place.wbt) and **Play** — the Youbot drives to the laptop kiosk (overlay: pay for nearby QVAC inference).
-3. **One paid call:** the robot posts to machine-agent **`POST /kiosk/infer`** (not periodic `/telemetry`).
-4. Kiosk Display: quote → sign intent → infer → receipt (source, latency in ms, ~$0.01 test USDT, receipt id).
-5. Settlement (optional, testnet): WDK broadcasts test USDT on Sepolia — one tx per settled receipt.
-6. The Youbot returns to the belt and picks the cube — **no second charge** for the factory task.
-
-## Demo narration (video beats)
-
-- **0:00** — QVAC on the LAN; Youbot registered on **peaq**; laptop is the gateway.
-- **0:18** — One shared QVAC gateway serves the fleet; kiosk Display + cyan HUD show local model and DID.
-- **0:48** — **peaq** identity + **QVAC** inference + **WDK** wallet; Optimus bills per inference; drive to kiosk in Webots.
-- **1:00** — One USDT payment intent signed on the LAN at the laptop.
-- **1:20** — Optional Sepolia settlement (test USDT); then pick without a second charge.
-
 ## Offline vs online
 
 | Step | Network |
@@ -129,7 +112,7 @@ Do not put the peaq private key in `MACHINE_WALLET_MNEMONIC`. WDK wants a seed p
 
 For peaq Machine Market: set `PEAQOS_PRIVATE_KEY` locally (never commit). After `peaqos activate`, set `MACHINE_ID` and `GATEWAY_DID` to the **same** robot DID.
 
-### Every demo run
+### Every run
 
 8. Optional after a break: `pnpm online` — re-queues failed receipts, resets kiosk status, runs one settlement pass (**needs internet**).
 9. **Terminal 1:** `pnpm gateway` — wait for `[QvacAdapter] offline load from` … `.gguf` and `qvacReady: true` on `/health`.
@@ -169,55 +152,6 @@ pnpm --filter @optimus/dashboard dev   # optional WS feed on :5173
 ```
 
 **Webots:** keep gateway + machine-agent up, open [`worlds/pick_and_place.wbt`](worlds/pick_and_place.wbt), Play.
-
-## Offline demo
-
-QVAC inference in this repo is **offline-first**: with `QVAC_OFFLINE=1` (default in [`.env.example`](.env.example)), the gateway loads a **cached GGUF from disk** and does not use the QVAC registry or Hugging Face. See [Proving QVAC without internet](#proving-qvac-runs-without-internet-demo--checks) for what to show judges.
-
-1. **Once, online:** `QVAC_ALLOW_NETWORK=1 pnpm download-models` (or rely on an existing file under `~/.qvac/models`).
-2. In `.env`: **`QVAC_OFFLINE=1`**, leave **`QVAC_ALLOW_NETWORK` unset** on the gateway.
-3. **Disable WAN** (Wi‑Fi off, airplane mode, or Ethernet unplugged).
-4. Start **`pnpm gateway`** then **`pnpm machine-agent`** (do **not** start `pnpm settlement` for the offline-only clip).
-5. Play Webots, or run `pnpm demo` / the dashboard scenario.
-6. **`OPTIMUS_OFFLINE=1 pnpm offline-check`** — loads the same local model path and runs a one-word completion with no HTTP server required.
-
-## Proving QVAC runs without internet (demo + checks)
-
-Judges need to see **two different things**: (A) **QVAC + WDK sign/verify** work with no internet, and (B) **Sepolia settlement** is a separate step that *does* need the network. Split those in your video.
-
-### What the code guarantees
-
-| Mechanism | Where | Behavior when offline |
-|-----------|--------|------------------------|
-| Offline mode default | [`packages/gateway/src/adapters/qvac-local.ts`](packages/gateway/src/adapters/qvac-local.ts) | `isQvacOfflineMode()` is **true** unless `QVAC_ALLOW_NETWORK=1` or `QVAC_OFFLINE=0` |
-| Model source | [`packages/gateway/src/adapters/qvac-adapter.ts`](packages/gateway/src/adapters/qvac-adapter.ts) | Loads **`modelSrc: localPath`** to the GGUF file — no registry URL, no HF `fallbackSrc` |
-| Gateway log (proof) | Same file | **`[QvacAdapter] offline load from`** + absolute path to `...Llama-3.2-1B-Instruct-Q4_0.gguf` |
-| If offline without cache | Same file | Fails fast: *No local GGUF found for offline QVAC* (proves it is not silently downloading) |
-| Strict script | [`scripts/offline-check.ts`](scripts/offline-check.ts) | **`OPTIMUS_OFFLINE=1 pnpm offline-check`** → `Offline inference result:` without calling `127.0.0.1:3030` |
-| Payment intent | [`packages/wallet`](packages/wallet) | EIP-191 **sign + verify on LAN** — no RPC for the kiosk step |
-
-Traffic during the offline half is **loopback only** (`127.0.0.1:3030` gateway, `127.0.0.1:4040` machine-agent). That is your factory LAN in the demo, not the public internet.
-
-### What still needs internet (say this on camera)
-
-| Step | Internet? |
-|------|-----------|
-| First-time `pnpm download-models` | Yes (once) |
-| `pnpm settlement` → Sepolia USDT | Yes (testnet) |
-| peaq Machine Market / Scale in production | Yes |
-
-**Not required for the QVAC clip:** Sepolia, peaq RPC, cloud LLM APIs, or Hugging Face while the gateway is running with `QVAC_OFFLINE=1`.
-
-### Recommended demo recording (offline half)
-
-1. Show **Windows Settings → Network → Wi‑Fi off** (or airplane mode) **before** starting services.
-2. Terminal: `pnpm gateway` — capture the line **`[QvacAdapter] offline load from`** and a path under **`\.qvac\models\`**.
-3. Terminal: `curl http://127.0.0.1:3030/health` — show **`qvacReady": true`** and **`modelAlias`** (still works with WAN off).
-4. Terminal: `pnpm machine-agent`, then **Webots Play** — kiosk infer, receipt, telemetry on LAN; **no settlement process** running.
-5. Optional second terminal: **`OPTIMUS_OFFLINE=1 pnpm offline-check`** with Wi‑Fi still off — shows inference without the gateway HTTP stack.
-6. **Re-enable network** only for the **settlement** beat: start **one** `pnpm settlement`, show Sepolia explorer, then say testnet payment is separate from private QVAC.
-
-If the gateway log ever shows **`network load (registry / fallback allowed)`**, you are not in offline mode — fix `.env` (`QVAC_OFFLINE=1`, no `QVAC_ALLOW_NETWORK=1`) and restart the gateway.
 
 ## Gateway HTTP
 
