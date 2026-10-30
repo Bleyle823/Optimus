@@ -5,6 +5,11 @@ import {
   unloadModel,
   LLAMA_3_2_1B_INST_Q4_0,
 } from "@qvac/sdk";
+import {
+  isQvacOfflineMode,
+  offlineLoadHint,
+  resolveCachedGgufPath,
+} from "./qvac-local.js";
 
 export interface QvacCompleteOptions {
   system: string;
@@ -21,10 +26,13 @@ export interface QvacAdapter {
   complete(opts: QvacCompleteOptions): Promise<string>;
 }
 
+const LOCAL_MODEL_TYPE = "llamacpp-completion" as const;
+const LOCAL_MODEL_CONFIG = { ctx_size: 2048 };
+
 export function createQvacAdapter(modelEnv?: string): QvacAdapter {
   let modelId: string | null = null;
   let loadError: string | null = null;
-  const modelSrc =
+  const registryModelSrc =
     modelEnv === "LLAMA_3_2_1B_INST_Q4_0" || !modelEnv
       ? LLAMA_3_2_1B_INST_Q4_0
       : LLAMA_3_2_1B_INST_Q4_0;
@@ -36,12 +44,15 @@ export function createQvacAdapter(modelEnv?: string): QvacAdapter {
 
     async assessFit() {
       try {
+        const offline = isQvacOfflineMode();
+        const localPath = offline ? resolveCachedGgufPath() : null;
+        const modelSrc = localPath ?? registryModelSrc;
         const result = await assessModelFit({
           models: [
             {
               modelSrc,
-              modelType: "llamacpp-completion",
-              modelConfig: { ctx_size: 2048 },
+              modelType: LOCAL_MODEL_TYPE,
+              modelConfig: LOCAL_MODEL_CONFIG,
             },
           ],
         });
@@ -59,19 +70,36 @@ export function createQvacAdapter(modelEnv?: string): QvacAdapter {
       if (modelId) return;
       try {
         await this.assessFit();
-        modelId = await loadModel({
-          modelSrc,
-          fallbackSrc:
-            process.env.QVAC_FALLBACK_SRC ??
-            "https://huggingface.co/unsloth/Llama-3.2-1B-Instruct-GGUF/resolve/b69aef112e9f895e6f98d7ae0949f72ff09aa401/Llama-3.2-1B-Instruct-Q4_0.gguf",
-          onProgress: (p) => {
-            if (p.percentage >= 100 || Math.floor(p.percentage) % 25 === 0) {
-              console.info(
-                `[QvacAdapter] download ${p.percentage.toFixed(0)}%`,
-              );
-            }
-          },
-        });
+
+        if (isQvacOfflineMode()) {
+          const localPath = resolveCachedGgufPath();
+          if (!localPath) {
+            throw new Error(
+              `No local GGUF found for offline QVAC. ${offlineLoadHint()}`,
+            );
+          }
+          console.info("[QvacAdapter] offline load from", localPath);
+          modelId = await loadModel({
+            modelSrc: localPath,
+            modelType: LOCAL_MODEL_TYPE,
+            modelConfig: LOCAL_MODEL_CONFIG,
+          });
+        } else {
+          console.info("[QvacAdapter] network load (registry / fallback allowed)");
+          modelId = await loadModel({
+            modelSrc: registryModelSrc,
+            fallbackSrc:
+              process.env.QVAC_FALLBACK_SRC ??
+              "https://huggingface.co/unsloth/Llama-3.2-1B-Instruct-GGUF/resolve/b69aef112e9f895e6f98d7ae0949f72ff09aa401/Llama-3.2-1B-Instruct-Q4_0.gguf",
+            onProgress: (p) => {
+              if (p.percentage >= 100 || Math.floor(p.percentage) % 25 === 0) {
+                console.info(
+                  `[QvacAdapter] download ${p.percentage.toFixed(0)}%`,
+                );
+              }
+            },
+          });
+        }
         loadError = null;
       } catch (e) {
         loadError = e instanceof Error ? e.message : String(e);

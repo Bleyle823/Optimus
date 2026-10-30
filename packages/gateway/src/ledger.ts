@@ -27,7 +27,24 @@ export class GatewayLedger {
     }
   }
 
+  private mergeSettlementFromDisk() {
+    try {
+      const disk = JSON.parse(readFileSync(this.path, "utf8")) as LedgerFile;
+      const byId = new Map(disk.receipts.map((r) => [r.receiptId, r]));
+      for (const receipt of this.data.receipts) {
+        const fromDisk = byId.get(receipt.receiptId);
+        if (fromDisk?.txHash) {
+          receipt.settlementStatus = fromDisk.settlementStatus;
+          receipt.txHash = fromDisk.txHash;
+        }
+      }
+    } catch {
+      /* disk missing or invalid */
+    }
+  }
+
   private flush() {
+    this.mergeSettlementFromDisk();
     writeFileSync(this.path, JSON.stringify(this.data, null, 2), "utf8");
   }
 

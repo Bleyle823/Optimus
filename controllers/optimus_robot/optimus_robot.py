@@ -11,6 +11,9 @@ AGENT_TELEMETRY_URL = os.environ.get(
     "MACHINE_AGENT_URL", "http://127.0.0.1:4040/telemetry"
 )
 AGENT_BASE = AGENT_TELEMETRY_URL.rsplit("/", 1)[0]
+AGENT_KIOSK_INFER_URL = os.environ.get(
+    "MACHINE_AGENT_KIOSK_URL", f"{AGENT_BASE}/kiosk/infer"
+)
 TELEMETRY_EVERY_STEPS = int(os.environ.get("TELEMETRY_EVERY_STEPS", "120"))
 CONTEXT = os.environ.get(
     "OPTIMUS_CONTEXT",
@@ -258,7 +261,7 @@ def pay_for_inference():
         )
     )
     try:
-        body = post_json(AGENT_TELEMETRY_URL, sample_telemetry())
+        body = post_json(AGENT_KIOSK_INFER_URL, sample_telemetry())
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError):
         emit_kiosk(
             kiosk_payload(
