@@ -8,6 +8,8 @@ export const telemetryReadingSchema = z.object({
   timestamp: z.string().datetime(),
   metrics: z.record(z.string(), z.number()),
   context: z.string().min(1),
+  /** Deprecated: paid infer uses POST /kiosk/infer on the machine-agent, not /telemetry. */
+  requestPaidInfer: z.boolean().optional(),
 });
 
 export const quoteTaskSchema = z.literal("anomaly_judgment");

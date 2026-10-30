@@ -1,5 +1,3 @@
-import { createWalletAdapter } from "@optimus/wallet";
-
 const base = process.env.GATEWAY_URL ?? "http://127.0.0.1:3030";
 const health = await fetch(`${base}/health`);
 const h = (await health.json()) as { gatewayAddress: string };
@@ -9,6 +7,14 @@ const quoteRes = await fetch(`${base}/quote?task=anomaly_judgment`);
 const quote = await quoteRes.json();
 console.info("quote", quote);
 
+if (process.env.SMOKE_PAID_INFER !== "1") {
+  console.info(
+    "Skipping paid /infer (kiosk-only). Set SMOKE_PAID_INFER=1 to test payment manually.",
+  );
+  process.exit(0);
+}
+
+const { createWalletAdapter } = await import("@optimus/wallet");
 const wallet = createWalletAdapter({
   seedPhrase:
     process.env.MACHINE_WALLET_MNEMONIC ??
