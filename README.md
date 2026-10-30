@@ -16,6 +16,12 @@ This changes how robots are sold. **Robots-as-a-service** is growing fast, from 
 Manufacturing matters in Kenya, which is why this design fits. According to the **Kenya National Bureau of Statistics Economic Survey 2025**, manufacturing made up **7.3% of GDP** in 2024 and employed about **369,200** people, or **11.5%** of formal employment. A plant in Nairobi can put a laptop running **QVAC** next to the robot, keep temperature, vibration, and motor data in the building, and **pay only when the robot asks for a judgment**. That is a smaller commitment than an idle robot lease or a workflow that ships process data to a foreign cloud.
 <p align="center">
   
+
+https://github.com/user-attachments/assets/a973e3b2-7c25-44fd-b2d9-5675888d1ff5
+
+
+
+
 </p>
 
 <p align="center">
