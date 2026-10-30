@@ -3,10 +3,15 @@
 <p align="center">
   <img src="worlds/textures/factory_logo.png" alt="Tether" width="360" />
 </p>
+Optimus is a robotics-as-a-service application built on **QVAC** and peaq. A factory robot needs private judgments (is the cold room safe, is the motor hot, is vibration a fault), but it has no GPU to run a model itself. **QVAC** on a laptop beside the line runs a local model, so the readings never leave the factory network. The robot holds its own keys through Tether’s Wallet Development Kit **(WDK)** and pays for each judgment, and peaq holds the robot’s identity.
 
-Private, on-device inference for warehouse machines. A **KUKA Youbot** in Webots is the peaqOS machine. **QVAC** runs as that machine’s HTTP runtime on the nearby laptop (the robot has no GPU). **WDK** signs USDT payment intents on the LAN. **peaq** holds identity, the Machine NFT, and Machine Market listing.
+A warehouse robot already produces the data a judgment needs: temperature, motor heat, and vibration. Sending that stream to a cloud model would export the factory’s data. QVAC avoids this by sitting on hardware the factory controls. It loads a local GGUF model (here, Llama 3.2 1B Instruct, Q4_0) and answers on the LAN. In this demo the gateway is the laptop in the Webots scene. It behaves like a Wi-Fi access point, except the service is private inference. Telemetry stays on the LAN and the result comes back to the robot.
 
-Same shape as the [Unitree G1 + QVAC](https://www.peaq.xyz/blog/peaq-brings-qvac-by-tether-to-robots-and-machines-enabling-private-ai-inference-at-the-edge) story: one peaqID, a paired agent that discovers QVAC and pays, no second Machine NFT for the model host.
+The project runs in the Webots robot simulator, which models real-world physics, so the robot’s movement, sensing, and pick-and-place behave as they would on a factory floor. The same architecture should work when deployed: a laptop running QVAC beside a physical robot, a wallet held by the robot, and an identity recorded on peaq.
+
+This changes how robots are sold. Robots-as-a-service is growing fast, from an estimated $25B today to almost $70B by 2030, yet most of it runs on flat monthly leases. A robot that makes one delivery earns the same as one that makes a hundred, and speed, precision, and careful handling go unrewarded because the contract is a calendar, not a task. With QVAC, the robot can get a judgment (the room is out of range, the motor is hot) from hardware the plant controls, and WDK lets it pay for that judgment from a wallet it holds. The product becomes a private decision, settled in USDT, followed by the pick.
+
+Manufacturing matters in Kenya, which is why this design fits. According to the Kenya National Bureau of Statistics Economic Survey 2025, manufacturing made up 7.3% of GDP in 2024 and employed about 369,200 people, or 11.5% of formal employment. A plant in Nairobi can put a laptop running QVAC next to the robot, keep temperature, vibration, and motor data in the building, and pay only when the robot asks for a judgment. That is a smaller commitment than an idle robot lease or a workflow that ships process data to a foreign cloud.
 
 <p align="center">
   <img src="docs/images/youbot-pick-and-place.jpg" alt="Youbot on the factory floor next to the pick crate" width="720" />
