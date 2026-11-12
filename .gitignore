@@ -1,0 +1,25 @@
+# Secrets and machine keys — never commit
+.env
+.env.*
+!.env.example
+keys/
+*.pem
+*.secret
+hotel_raas_local.json
+**/target/
+**/Cargo.lock
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+settlement/outbox.json
+settlement/receipts/*.json
+!settlement/receipts/.gitkeep
+controllers/mission_control/__pycache__/
+.idea/
+.vscode/
+*.swp
+worlds/.kitchen.wbproj
+.cursor/plans/
