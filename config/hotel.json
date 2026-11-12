@@ -1,0 +1,58 @@
+{
+  "network": "testnet",
+  "rpc": "https://rpc.testnet.near.org",
+  "escrow_account": "",
+  "ft_contract": "wrap.testnet",
+  "accounts": {
+    "guest": "guest.testnet",
+    "robot": "tiago.testnet",
+    "pantry": "pantry.testnet",
+    "courier": "courier.testnet"
+  },
+  "procurement": {
+    "max_price_yocto": "100000000000000000000000",
+    "pantry_bps": 4000,
+    "deadline_seconds": 900,
+    "kill_switch": false
+  },
+  "skills": {
+    "fetch_honey": {
+      "price_yocto": "50000000000000000000000",
+      "peaq_events": ["activity"],
+      "note": "Under $10 equivalent: activity only, does not move total_revenue"
+    },
+    "place_zone_0": {
+      "price_yocto": "30000000000000000000000",
+      "peaq_events": ["activity"]
+    },
+    "fetch_jam": {
+      "price_yocto": "50000000000000000000000",
+      "peaq_events": ["activity"]
+    },
+    "place_zone_1": {
+      "price_yocto": "30000000000000000000000",
+      "peaq_events": ["activity"]
+    },
+    "fetch_jam_2": {
+      "price_yocto": "50000000000000000000000",
+      "peaq_events": ["activity"]
+    },
+    "place_zone_2": {
+      "price_yocto": "30000000000000000000000",
+      "peaq_events": ["activity"]
+    }
+  },
+  "courier_quote": {
+    "skill_id": "fetch_honey",
+    "price_yocto": "80000000000000000000000",
+    "must_refuse": true,
+    "reason": "above procurement.max_price for this skill / pantry-owned path is cheaper"
+  },
+  "intents": {
+    "dry": true,
+    "slippage_tolerance": 100,
+    "destination_asset": "nep141:usdt.tether-token.near",
+    "max_amount_atomic": "100000000000000000000000",
+    "refund_to": ""
+  }
+}
