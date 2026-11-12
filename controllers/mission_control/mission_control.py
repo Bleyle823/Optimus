@@ -9,6 +9,8 @@ from py_trees.composites import Sequence, Parallel, Selector
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 
+from skill_bridge import ReportSkill, requested_skill
+
 from arm_control import open_gripper, grab_item, arm_travel_position, arm_extend_position, lift_arm
 from body_control import change_height_to, search
 from travel_control import route, move, get_in_position, back_up, rotate_to_face
@@ -115,9 +117,7 @@ class update(Behaviour):
 
 #The Behaviour Tree (BT)------------------------------------------------------
 
-BT = Sequence("main", children=[
-        
-        #map out the floor if it DNE
+prep = Sequence("prep", children=[
         arm_travel_position("get ready to move",blackboard),
         Selector("Does Map Exist?", children=[
             test_for_map("Test for map"),
@@ -125,8 +125,9 @@ BT = Sequence("main", children=[
                 map_environment("Map the environment",blackboard),
                 move("Move around the table",blackboard)
                 ])],memory=True),
-                
-            #find and pick up the first jar (honey)
+        ], memory=True)
+
+fetch_honey = Sequence("fetch_honey", children=[
             route("compute path to counter",blackboard,grab_position),
             move("move to counter",blackboard),
             search("look for honey", blackboard, ["honey jar","jam jar"]),
@@ -139,8 +140,10 @@ BT = Sequence("main", children=[
             lift_arm("pick up honey jar",blackboard),
             back_up("pull back", blackboard),
             back_up("pull back", blackboard),
-            
-            #place the honey on the table
+            ReportSkill("report fetch_honey", blackboard, "fetch_honey"),
+        ], memory=True)
+
+place_zone_0 = Sequence("place_zone_0", children=[
             route("compute path to spot 1",blackboard,drop_positions[0]),
             move("move to spot 1",blackboard),
             rotate_to_face("spot 1",blackboard,zone=0),
@@ -150,12 +153,12 @@ BT = Sequence("main", children=[
             open_gripper("release item", blackboard),
             back_up("pull back", blackboard),
             lift_arm("move out of way",blackboard),
-            
-            #go back and grab jar 2, then put it on the table at spot 2
+            ReportSkill("report place_zone_0", blackboard, "place_zone_0"),
+        ], memory=True)
+
+fetch_jam = Sequence("fetch_jam", children=[
             route("compute path to counter",blackboard,grab_position),
             move("move to counter",blackboard),
-            
-            #search("look for jam", blackboard, "jam jar"),
             change_height_to("adjust height",blackboard,object_name="jam jar"),
             arm_travel_position("get ready to move",blackboard),
             rotate_to_face("jam 1",blackboard,object_name="jam jar"),
@@ -165,7 +168,10 @@ BT = Sequence("main", children=[
             lift_arm("pick up jam",blackboard),
             back_up("pull back", blackboard),
             back_up("pull back", blackboard),
-            
+            ReportSkill("report fetch_jam", blackboard, "fetch_jam"),
+        ], memory=True)
+
+place_zone_1 = Sequence("place_zone_1", children=[
             route("compute path to table staging area",blackboard,drop_positions[1]),
             move("move to spot",blackboard),
             rotate_to_face("spot 2",blackboard,zone=1),
@@ -175,11 +181,12 @@ BT = Sequence("main", children=[
             open_gripper("release item", blackboard),
             back_up("pull back", blackboard),
             lift_arm("move out of way",blackboard),
-            
-            #go back and grab jar 3, then put it on the table at spot 3
+            ReportSkill("report place_zone_1", blackboard, "place_zone_1"),
+        ], memory=True)
+
+fetch_jam_2 = Sequence("fetch_jam_2", children=[
             route("compute path to counter",blackboard,grab_position),
             move("move to counter",blackboard),
-            
             change_height_to("adjust height",blackboard,object_name="jam jar"),
             arm_travel_position("get ready to move",blackboard),
             rotate_to_face("jam 2",blackboard,object_name="jam jar"),
@@ -189,7 +196,10 @@ BT = Sequence("main", children=[
             lift_arm("pick up jam",blackboard),
             back_up("pull back", blackboard),
             back_up("pull back", blackboard),
-            
+            ReportSkill("report fetch_jam_2", blackboard, "fetch_jam_2"),
+        ], memory=True)
+
+place_zone_2 = Sequence("place_zone_2", children=[
             route("compute path to table staging area",blackboard,drop_positions[2]),
             move("move to spot",blackboard),
             rotate_to_face("spot 3",blackboard,zone=2),
@@ -199,12 +209,28 @@ BT = Sequence("main", children=[
             open_gripper("release item", blackboard),
             back_up("pull back", blackboard),
             lift_arm("move out of way",blackboard),
-            
+            ReportSkill("report place_zone_2", blackboard, "place_zone_2"),
             route("compute path to counter",blackboard,grab_position),
-            #arm_travel_position("get ready to move",blackboard),
             move("move to counter",blackboard),
+        ], memory=True)
 
-        ],memory=True)
+SKILLS = {
+    "fetch_honey": fetch_honey,
+    "place_zone_0": place_zone_0,
+    "fetch_jam": fetch_jam,
+    "place_zone_1": place_zone_1,
+    "fetch_jam_2": fetch_jam_2,
+    "place_zone_2": place_zone_2,
+}
+
+_skill = requested_skill()
+if _skill == "all" or _skill not in SKILLS:
+    _children = [prep] + list(SKILLS.values())
+else:
+    _children = [prep, SKILLS[_skill]]
+    print("HOTEL_SKILL", _skill)
+
+BT = Sequence("main", children=_children, memory=True)
 
 BT.setup_with_descendants()
 #-----------------------------------------------------------------------------
