@@ -14,10 +14,11 @@ from hotel.config import PEAQ_STATUS, RECEIPTS_DIR, load
 
 class HotelRaaSTests(unittest.TestCase):
     def test_quotes_refuse_courier(self):
-        q = quotes(load())
+        cfg = load()
+        q = quotes(cfg)
         self.assertTrue(q["accepted"]["accepted"])
         self.assertFalse(q["refused"]["accepted"])
-        self.assertIn("courier", q["refused"]["account"])
+        self.assertEqual(q["refused"]["account"], cfg["accounts"]["courier"])
 
     def test_one_key_derivation(self):
         rec = derive("robot")
