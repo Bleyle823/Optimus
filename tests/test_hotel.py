@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT))
 from hotel.dispatcher import quotes, simulate_skill, settle_outbox, create_claim
 from hotel.keys import derive
 from hotel.agent_market import receipt_markdown
-from hotel.config import RECEIPTS_DIR, load
+from hotel.config import PEAQ_STATUS, RECEIPTS_DIR, load
 
 
 class HotelRaaSTests(unittest.TestCase):
@@ -39,6 +39,15 @@ class HotelRaaSTests(unittest.TestCase):
         self.assertEqual(receipt["skill_id"], "fetch_honey")
         self.assertTrue(receipt["webots_success"])
         self.assertFalse(receipt["refused_quote"]["accepted"])
+        self.assertTrue(receipt.get("solana_address"))
+        self.assertTrue(receipt.get("near_implicit"))
+        self.assertEqual(receipt["peaq"]["home_chain"], 5)
+        self.assertFalse(receipt["peaq"]["submitted"])
+        self.assertEqual(receipt["peaq"]["activity"]["trustLevel"], 0)
+        self.assertTrue(PEAQ_STATUS.exists())
+        peaq_status = json.loads(PEAQ_STATUS.read_text(encoding="utf-8"))
+        self.assertEqual(peaq_status["solana_address"], receipt["solana_address"])
+        self.assertFalse(peaq_status["live"])
         md = receipt_markdown(receipt)
         self.assertIn(receipt["claim_id"], md)
         self.assertIn("fetch_honey", md)
