@@ -16,6 +16,7 @@ from py_trees.common import Status
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 RECEIPTS = os.path.join(ROOT, "settlement", "receipts")
 OUTBOX = os.path.join(ROOT, "settlement", "outbox.json")
+PEAQ_STATUS = os.path.join(ROOT, "settlement", "peaq_status.json")
 
 
 def settle_mode():
@@ -93,6 +94,36 @@ def latest_receipt_for(skill_id, since=None):
         if want_hash is None and since is None:
             return data
     return None
+
+
+def _load_peaq_status():
+    if not os.path.isfile(PEAQ_STATUS):
+        return {}
+    try:
+        with open(PEAQ_STATUS, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def print_settlement_console(receipt):
+    """Butler-style flushed lines. Controller still never signs."""
+    claim = receipt.get("claim_id") or ""
+    skill = receipt.get("skill_id") or ""
+    complete_tx, complete_ex = _tx_bits(receipt.get("complete") or {})
+    pay_tx, pay_ex = _tx_bits(receipt.get("pay_supplier") or {})
+    refused = receipt.get("refused_quote") or {}
+    reason = refused.get("reason") or refused.get("accepted") or ""
+    peaq = receipt.get("peaq") if isinstance(receipt.get("peaq"), dict) else {}
+    status = _load_peaq_status()
+    solana = peaq.get("solana_address") or receipt.get("solana_address") or status.get("solana_address") or ""
+    implicit = peaq.get("near_implicit") or receipt.get("near_implicit") or status.get("near_implicit") or ""
+    print("[near] claim %s skill %s" % (claim, skill), flush=True)
+    print("[near] complete %s %s" % (complete_tx, complete_ex), flush=True)
+    print("[near] pay_supplier %s" % pay_tx, flush=True)
+    print("[near] courier refused %s" % reason, flush=True)
+    print("[peaq] solana %s near %s activity %s" % (solana, implicit, claim), flush=True)
 
 
 def paint_hud(robot, lines):
@@ -213,7 +244,7 @@ class ShowSettlement(Behaviour):
             complete_ex or pay_ex,
         ]
         paint_hud(self.robot, lines)
-        print("NEAR_HUD", receipt.get("claim_id"), complete_tx, pay_tx)
+        print_settlement_console(receipt)
 
     def terminate(self, new_status):
         if new_status == Status.SUCCESS:
