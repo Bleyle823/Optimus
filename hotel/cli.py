@@ -7,7 +7,13 @@ from pathlib import Path
 
 from hotel.config import KEYS_DIR, load, require_live
 from hotel.keys import ROLE_FILES, derive, load_role
-from hotel.near_rpc import NearClient, next_nonce, sign_add_function_call_key, sign_deploy
+from hotel.near_rpc import (
+    NearClient,
+    next_nonce,
+    sign_add_function_call_key,
+    sign_deploy,
+    sign_function_call,
+)
 
 
 def main(argv: list[str] | None = None) -> None:
