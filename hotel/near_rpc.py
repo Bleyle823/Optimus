@@ -15,6 +15,7 @@ from hotel.keys import signing_key
 
 ACTION_FUNCTION_CALL = 2
 ACTION_ADD_KEY = 5
+ACTION_DELETE_KEY = 6
 CREATE_ACCOUNT = 0
 TRANSFER = 3
 DEPLOY_CONTRACT = 1
@@ -27,7 +28,7 @@ class NearClient:
 
     def call(self, method: str, params: Any) -> Any:
         body = {"jsonrpc": "2.0", "id": "hotel", "method": method, "params": params}
-        r = requests.post(self.rpc, json=body, timeout=30)
+        r = requests.post(self.rpc, json=body, timeout=90)
         r.raise_for_status()
         data = r.json()
         if data.get("error"):
@@ -78,16 +79,8 @@ class NearClient:
 
 
 def _varint(n: int) -> bytes:
-    out = bytearray()
-    while True:
-        b = n & 0x7F
-        n >>= 7
-        if n:
-            out.append(b | 0x80)
-        else:
-            out.append(b)
-            break
-    return bytes(out)
+    """Borsh length prefix: u32 little-endian, not a compact integer."""
+    return int(n).to_bytes(4, "little")
 
 
 def _str(s: str) -> bytes:
@@ -179,6 +172,29 @@ def sign_add_function_call_key(
     sig = sk.sign(digest).signature
     signed = tx + b"\x00" + sig
     return base64.b64encode(signed).decode()
+
+
+def sign_delete_key(
+    owner: dict,
+    signer_id: str,
+    public_key_near: str,
+    nonce: int,
+    block_hash_b58: str,
+) -> str:
+    sk = signing_key(owner)
+    pub = bytes(sk.verify_key)
+    tx = b""
+    tx += _str(signer_id)
+    tx += b"\x00" + pub
+    tx += _u64(nonce)
+    tx += _str(signer_id)
+    tx += base58.b58decode(block_hash_b58)
+    tx += _varint(1)
+    tx += bytes([ACTION_DELETE_KEY])
+    tx += _public_key_bytes(public_key_near)
+    digest = hashlib.sha256(tx).digest()
+    sig = sk.sign(digest).signature
+    return base64.b64encode(tx + b"\x00" + sig).decode()
 
 
 def sign_deploy(

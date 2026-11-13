@@ -1,7 +1,7 @@
 {
   "network": "testnet",
   "rpc": "https://rpc.testnet.near.org",
-  "escrow_account": "optimus2-guest-d144.testnet",
+  "escrow_account": "optimus2-escrow-d144.testnet",
   "ft_contract": "wrap.testnet",
   "accounts": {
     "guest": "optimus2-guest-d144.testnet",
