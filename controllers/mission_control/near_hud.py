@@ -34,7 +34,17 @@ def _hotel_python_cmd():
         return [override]
     py_launcher = shutil.which("py")
     if py_launcher:
-        return [py_launcher, "-3.10"]
+        for ver in ("-3.12", "-3.11", "-3.10"):
+            try:
+                probe = subprocess.run(
+                    [py_launcher, ver, "-c", "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            except OSError:
+                continue
+            if probe.returncode == 0:
+                return [py_launcher, ver]
     for name in ("python", "python3"):
         found = shutil.which(name)
         if found and os.path.abspath(found) != os.path.abspath(sys.executable):
