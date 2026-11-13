@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 from datetime import datetime
 
 from py_trees.behaviour import Behaviour
@@ -59,4 +60,7 @@ class ReportSkill(Behaviour):
 
 
 def requested_skill():
+    args = [a for a in sys.argv[1:] if a and not a.startswith("-")]
+    if args:
+        return args[0]
     return os.environ.get("HOTEL_SKILL", "all")

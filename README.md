@@ -21,7 +21,7 @@ License: [MIT](LICENSE).
 | `python -m hotel.cli derive-key --role robot` | One Ed25519 key, Solana address, NEAR implicit account (same 32-byte pubkey) |
 | `python -m hotel.cli quotes` | Pantry path accepted; `courier.testnet` quote refused; reason on a receipt |
 | Guest funds a claim (testnet) | `wrap.testnet` balance locked on the escrow; explorer link |
-| Open `worlds/kitchen.wbt` with `HOTEL_SKILL=fetch_honey` | TIAGo searches, grasps, lifts the honey jar; writes `settlement/outbox.json` |
+| Open `worlds/kitchen.wbt` with `HOTEL_SKILL=fetch_honey` (or world `controllerArgs`) | TIAGo drives to the counter, grasps and lifts the honey jar; HUD shows the NEAR receipt; `settlement/outbox.json` |
 | Dispatcher watches the outbox | Robot `complete` tx, robot balance up |
 | Same key `pay_supplier` | Pantry balance up; robot keeps the spread (pantry_bps in config) |
 | Print receipt | Claim id, both tx hashes, refused courier quote, Webots success |
@@ -38,6 +38,49 @@ License: [MIT](LICENSE).
 - Optional: NEAR testnet named accounts (`tiago.testnet`, `pantry.testnet`, `guest.testnet`, `courier.testnet`) and a small `wrap.testnet` balance
 
 Copy `.env.example` to `.env`. Never commit keys. `keys/` is gitignored.
+
+## Run end-to-end (Webots + settlement)
+
+Webots uses Python **3.9** (`controllers/mission_control/runtime.ini`). `hotel/` needs Python **3.10+**. The controller never imports `hotel`; it writes `settlement/outbox.json` and overlays the receipt with `Supervisor.setLabel`.
+
+`worlds/kitchen.wbt` ships TIAGo with `controllerArgs` `fetch_honey`. Settlement mode is `HOTEL_SETTLE` (`offline` default, `live`, or `none`). If the 3.10 binary is not `py -3.10`, set `HOTEL_PYTHON` to that interpreter.
+
+### A. Offline (no testnet; proves drive + HUD)
+
+1. `pip install -r requirements.txt` on Python 3.10+.
+2. `python -m hotel.cli derive-key --role robot` (and `pantry`, `guest`, `courier`) if `keys/` is empty.
+3. `python -m hotel.cli create-claim --skill fetch_honey --offline`
+4. In Webots: **File → Reload World**, then Play. Optional env: `HOTEL_SETTLE=offline`.
+5. **See:** TIAGo starts at `(0, 0.25)` (the reference kitchen pose), follows the mapped path, grasps the honey jar, then a HUD: claim id, `complete` / `pay_supplier` `offline`, refused courier quote.
+
+### B. Live NEAR testnet (fill these; do not invent accounts)
+
+Copy `.env.example` to `.env`. Paste values you control:
+
+| Field | Where | What you put |
+| --- | --- | --- |
+| `NEAR_ESCROW_ACCOUNT` | `.env` and `config/hotel.json` `escrow_account` | Named testnet account that will hold the wasm |
+| `NEAR_GUEST_ACCOUNT` / `NEAR_ROBOT_ACCOUNT` / `NEAR_PANTRY_ACCOUNT` / `NEAR_COURIER_ACCOUNT` | `.env` (defaults `guest.testnet`, `tiago.testnet`, `pantry.testnet`, `courier.testnet`) | Accounts you created; full-access keys for guest/robot/pantry |
+| `NEAR_FT_CONTRACT` | `.env` | `wrap.testnet` |
+| `ROBOT_KEYFILE` / `GUEST_KEYFILE` / `PANTRY_KEYFILE` | `.env` | `keys/robot.json` (and guest/pantry) from `derive-key` |
+| wrap.testnet balance | guest account | Enough for `fetch_honey` (`price_yocto` `5e22` in config) |
+| wasm | `contracts/task_escrow` | `cargo build --target wasm32-unknown-unknown --release` then `python -m hotel.cli deploy-escrow --wasm ...` and `init-escrow` |
+| function-call key | robot | `python -m hotel.cli add-function-call-key` after `escrow_account` is set |
+
+Then:
+
+```bash
+python -m hotel.cli create-claim --skill fetch_honey
+python -m hotel.cli fund-claim --claim <id>
+```
+
+Play with `HOTEL_SKILL=fetch_honey` (or the world `controllerArgs`) and `HOTEL_SETTLE=live`. In another terminal:
+
+```bash
+python -m hotel.cli watch --once
+```
+
+**See:** HUD claim id, real `complete` / `pay_supplier` hashes, explorer URL. Leave `INTENTS_LIVE=0` and `PEAQ_LIVE=0`. Dry extras: `python -m hotel.cli intents-quote --dry`, `python -m hotel.cli peaq-dry`.
 
 ## 1. Derive the one-key model
 
@@ -85,11 +128,11 @@ If `procurement.kill_switch` is true in config, both commands refuse to run.
 
 ## 4. Run the skill in Webots
 
-Set `HOTEL_SKILL=fetch_honey` in the controller environment (Webots: robot `controllerArgs` or a shell env before launching Webots). Open `worlds/kitchen.wbt`, play.
+The world already passes `controllerArgs` `fetch_honey`. Override with `HOTEL_SKILL` in the controller environment if needed. Open `worlds/kitchen.wbt`, play.
 
-**See:** TIAGo maps if needed, routes to the counter, grasps `honey jar`, lifts it, then writes `settlement/outbox.json` with GPS, compass, skill id, and a telemetry hash.
+**See:** TIAGo follows the reference kitchen path, grasps `honey jar`, lifts it, writes `settlement/outbox.json`, then overlays claim / tx lines (unless `HOTEL_SETTLE=none`).
 
-Leave `HOTEL_SKILL` unset to run the original full tree (baseline).
+Clear `controllerArgs` and leave `HOTEL_SKILL` unset to run the original full tree (baseline).
 
 ## 5. Machine-to-machine settlement
 
