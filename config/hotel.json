@@ -1,13 +1,13 @@
 {
   "network": "testnet",
   "rpc": "https://rpc.testnet.near.org",
-  "escrow_account": "",
+  "escrow_account": "0ab54d58c445892067c99fee486a2a987d1f2b707693484cbf76732d43d5d144",
   "ft_contract": "wrap.testnet",
   "accounts": {
-    "guest": "guest.testnet",
-    "robot": "tiago.testnet",
-    "pantry": "pantry.testnet",
-    "courier": "courier.testnet"
+    "guest": "0ab54d58c445892067c99fee486a2a987d1f2b707693484cbf76732d43d5d144",
+    "robot": "150410479da834a2c297586600eb0b90619d43573eb91121729e5480be27f63d",
+    "pantry": "dd361b1b93872fd270b3e3e2f252a69f314959c6689c11c012419145c96dc928",
+    "courier": "04d64b2735d87da99312f9b200a792cc32d47a1ecc225ab2173dcf2f9dbe6885"
   },
   "procurement": {
     "max_price_yocto": "100000000000000000000000",

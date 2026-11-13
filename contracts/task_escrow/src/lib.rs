@@ -1,14 +1,14 @@
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    env, ext_contract, log, near_bindgen, require, AccountId, BorshStorageKey, Gas, PanicOnDefault,
-    Promise, PromiseOrValue, PublicKey,
+    env, ext_contract, log, near_bindgen, require, AccountId, BorshStorageKey, Gas, NearToken,
+    PanicOnDefault, Promise, PromiseOrValue, PublicKey,
 };
 
-const GAS_FOR_FT_TRANSFER: Gas = 10_000_000_000_000;
-const YOCTO_1: u128 = 1;
+const GAS_FOR_FT_TRANSFER: Gas = Gas::from_tgas(10);
+const ONE_YOCTO: NearToken = NearToken::from_yoctonear(1);
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
@@ -47,7 +47,7 @@ trait FungibleToken {
     fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>);
 }
 
-#[near_bindgen]
+#[near_bindgen(contract_state)]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
     pub owner: AccountId,
@@ -164,14 +164,10 @@ impl Contract {
         self.claims.insert(&claim_id, &claim);
 
         log!("complete {} robot_share {}", claim_id, robot_share);
-        ext_ft::ft_transfer(
-            robot,
-            U128(robot_share),
-            Some(format!("complete:{}", claim_id)),
-            token,
-            YOCTO_1,
-            GAS_FOR_FT_TRANSFER,
-        )
+        ext_ft::ext(token)
+            .with_attached_deposit(ONE_YOCTO)
+            .with_static_gas(GAS_FOR_FT_TRANSFER)
+            .ft_transfer(robot, U128(robot_share), Some(format!("complete:{}", claim_id)))
     }
 
     pub fn pay_supplier(&mut self, claim_id: String) -> Promise {
@@ -196,14 +192,10 @@ impl Contract {
         self.claims.insert(&claim_id, &claim);
 
         log!("pay_supplier {} share {}", claim_id, share);
-        ext_ft::ft_transfer(
-            pantry,
-            U128(share),
-            Some(format!("supplier:{}", claim_id)),
-            token,
-            YOCTO_1,
-            GAS_FOR_FT_TRANSFER,
-        )
+        ext_ft::ext(token)
+            .with_attached_deposit(ONE_YOCTO)
+            .with_static_gas(GAS_FOR_FT_TRANSFER)
+            .ft_transfer(pantry, U128(share), Some(format!("supplier:{}", claim_id)))
     }
 
     pub fn refund(&mut self, claim_id: String) -> Promise {
@@ -235,14 +227,10 @@ impl Contract {
         self.claims.insert(&claim_id, &claim);
 
         log!("refund {}", claim_id);
-        ext_ft::ft_transfer(
-            guest,
-            U128(price),
-            Some(format!("refund:{}", claim_id)),
-            token,
-            YOCTO_1,
-            GAS_FOR_FT_TRANSFER,
-        )
+        ext_ft::ext(token)
+            .with_attached_deposit(ONE_YOCTO)
+            .with_static_gas(GAS_FOR_FT_TRANSFER)
+            .ft_transfer(guest, U128(price), Some(format!("refund:{}", claim_id)))
     }
 }
 
