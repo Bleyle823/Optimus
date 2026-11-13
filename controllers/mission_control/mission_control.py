@@ -10,6 +10,7 @@ from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 
 from skill_bridge import ReportSkill, requested_skill
+from near_hud import ShowSettlement
 
 from arm_control import open_gripper, grab_item, arm_travel_position, arm_extend_position, lift_arm
 from body_control import change_height_to, search
@@ -141,6 +142,7 @@ fetch_honey = Sequence("fetch_honey", children=[
             back_up("pull back", blackboard),
             back_up("pull back", blackboard),
             ReportSkill("report fetch_honey", blackboard, "fetch_honey"),
+            ShowSettlement("show NEAR fetch_honey", blackboard, "fetch_honey"),
         ], memory=True)
 
 place_zone_0 = Sequence("place_zone_0", children=[
@@ -154,6 +156,7 @@ place_zone_0 = Sequence("place_zone_0", children=[
             back_up("pull back", blackboard),
             lift_arm("move out of way",blackboard),
             ReportSkill("report place_zone_0", blackboard, "place_zone_0"),
+            ShowSettlement("show NEAR place_zone_0", blackboard, "place_zone_0"),
         ], memory=True)
 
 fetch_jam = Sequence("fetch_jam", children=[
@@ -169,6 +172,7 @@ fetch_jam = Sequence("fetch_jam", children=[
             back_up("pull back", blackboard),
             back_up("pull back", blackboard),
             ReportSkill("report fetch_jam", blackboard, "fetch_jam"),
+            ShowSettlement("show NEAR fetch_jam", blackboard, "fetch_jam"),
         ], memory=True)
 
 place_zone_1 = Sequence("place_zone_1", children=[
@@ -182,6 +186,7 @@ place_zone_1 = Sequence("place_zone_1", children=[
             back_up("pull back", blackboard),
             lift_arm("move out of way",blackboard),
             ReportSkill("report place_zone_1", blackboard, "place_zone_1"),
+            ShowSettlement("show NEAR place_zone_1", blackboard, "place_zone_1"),
         ], memory=True)
 
 fetch_jam_2 = Sequence("fetch_jam_2", children=[
@@ -197,6 +202,7 @@ fetch_jam_2 = Sequence("fetch_jam_2", children=[
             back_up("pull back", blackboard),
             back_up("pull back", blackboard),
             ReportSkill("report fetch_jam_2", blackboard, "fetch_jam_2"),
+            ShowSettlement("show NEAR fetch_jam_2", blackboard, "fetch_jam_2"),
         ], memory=True)
 
 place_zone_2 = Sequence("place_zone_2", children=[
@@ -210,6 +216,7 @@ place_zone_2 = Sequence("place_zone_2", children=[
             back_up("pull back", blackboard),
             lift_arm("move out of way",blackboard),
             ReportSkill("report place_zone_2", blackboard, "place_zone_2"),
+            ShowSettlement("show NEAR place_zone_2", blackboard, "place_zone_2"),
             route("compute path to counter",blackboard,grab_position),
             move("move to counter",blackboard),
         ], memory=True)
@@ -224,11 +231,11 @@ SKILLS = {
 }
 
 _skill = requested_skill()
+print("HOTEL_SKILL", _skill)
 if _skill == "all" or _skill not in SKILLS:
     _children = [prep] + list(SKILLS.values())
 else:
     _children = [prep, SKILLS[_skill]]
-    print("HOTEL_SKILL", _skill)
 
 BT = Sequence("main", children=_children, memory=True)
 

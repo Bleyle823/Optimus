@@ -1,4 +1,4 @@
-#VRML_SIM R2025a utf8
+#VRML_SIM R2023b utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/cabinet/protos/Cabinet.proto"
@@ -43,8 +43,8 @@ WorldInfo {
 }
 Viewpoint {
   fieldOfView 1.1
-  orientation -0.01549891317730546 -0.8965028763925511 0.4427667290009541 5.444146554227511
-  position 1.1181124488411767 1.0775096817825935 1.6522115565639215
+  orientation 0.36925189829473143 -0.7321482936286936 -0.5723739265046317 5.297315842678134
+  position -0.6344576178953164 -1.0769896056515114 2.70024462082117
   exposure 0.7999999999999999
 }
 TexturedBackground {
@@ -55,9 +55,6 @@ TexturedBackground {
   ]
 }
 Cabinet {
-  hidden position_6_0 -4.9886579862205115e-06
-  hidden translation_7 -9.927429392537641e-07 2.476241434123949e-12 0
-  hidden rotation_7 0 0 -1 4.988663079424227e-06
   translation 2.15 -1 0.83
   rotation 0 0 1 3.14159
   name "cabinet(1)"
@@ -91,12 +88,6 @@ Cabinet {
   }
 }
 Cabinet {
-  hidden position_6_0 7.0381288647160114e-06
-  hidden translation_7 -1.5406464084736154e-06 -5.4216631184544894e-12 0
-  hidden rotation_7 0 0 1 7.038145126634325e-06
-  hidden position_10_0 7.038128770694059e-06
-  hidden translation_11 -1.5406463878922102e-06 -5.4216631184544894e-12 0
-  hidden rotation_11 0 0 0.9999999999999999 7.038145126634325e-06
   translation -0.11 1.65 0.15
   rotation 0 0 1 -1.5707953071795862
   name "cabinet(2)"
@@ -131,15 +122,6 @@ Cabinet {
   }
 }
 Cabinet {
-  hidden position_6_0 7.037939927997864e-06
-  hidden translation_7 -1.540605050226014e-06 -5.4213578071227175e-12 0
-  hidden rotation_7 0 0 1 7.037955831653634e-06
-  hidden position_10_0 -7.039437879657827e-06
-  hidden translation_11 -1.540932951844372e-06 5.4236060087475835e-12 0
-  hidden rotation_11 0 0 -1 7.039406963087199e-06
-  hidden position_14_0 -7.039437879658598e-06
-  hidden translation_15 -1.540932951844541e-06 5.4236060087475835e-12 0
-  hidden rotation_15 0 0 -1 7.039406963087199e-06
   translation 2.15 -0.1 1.4
   rotation 0 0 1 3.14159
   name "cabinet(3)"
@@ -173,9 +155,6 @@ Cabinet {
   }
 }
 Cabinet {
-  hidden position_6_0 7.037939927974847e-06
-  hidden translation_7 -1.5406050502209757e-06 -5.4213578071227175e-12 0
-  hidden rotation_7 0 0 1 7.037955831653634e-06
   translation 0.37 1.647 1.4
   rotation 0 0 1 -1.5707953071795862
   name "cabinet(4)"
@@ -205,15 +184,6 @@ Cabinet {
   }
 }
 Cabinet {
-  hidden position_6_0 0.010000105489560205
-  hidden translation_7 -0.0023382356942246284 -1.1691399231378297e-05 0
-  hidden rotation_7 0 0 1 0.010000105489545604
-  hidden position_10_0 0.01810736857204389
-  hidden translation_11 0.004233724090859165 3.833184862206407e-05 0
-  hidden rotation_11 0 0 1 0.018107368572033232
-  hidden position_14_0 4.96996975752711e-06
-  hidden translation_15 -8.406703844822497e-07 -2.08902339871031e-12 0
-  hidden rotation_15 0 0 1 4.969933787473752e-06
   translation 0.79 1.48 0.15
   rotation 0 0 1 -1.5707953071795862
   name "cabinet(5)"
@@ -247,15 +217,6 @@ Cabinet {
   }
 }
 Cabinet {
-  hidden position_6_0 -8.637507381337173e-06
-  hidden translation_7 -2.320466357967378e-06 1.0021483642930207e-11 0
-  hidden rotation_7 0 0 -1 8.637482218592799e-06
-  hidden position_10_0 -6.878824482059239e-06
-  hidden translation_11 -1.4715525273129173e-06 5.061312480236779e-12 0
-  hidden rotation_11 0 0 -1 6.878851175013929e-06
-  hidden position_14_0 6.878824482464618e-06
-  hidden translation_15 -1.471552527399638e-06 -5.061312480236779e-12 0
-  hidden rotation_15 0 0 1 6.878851175013929e-06
   translation 2.15 -0.12 0.15
   rotation 0 0 1 3.14159
   depth 0.7
@@ -361,10 +322,7 @@ Wall {
   size 0.2 0.8 2.4
 }
 Door {
-  hidden translation_5 0.001070970202699667 2.2256408723386745e-05 -2.220446049250313e-16
-  hidden rotation_5 0 0 -1 0.00014940745114065635
   translation -2.25 -1.45 0
-  position -0.000149407452486372
 }
 SolidBox {
   translation 1.55 -0.12 0.07
@@ -421,8 +379,7 @@ SolidBox {
   }
 }
 Robot {
-  translation 0.4244650060696473 -0.0554469185753785 0.09337117537156811
-  rotation 0.016720838089325285 0.011396327978983293 -0.9997952476793366 1.9404626838217327
+  translation 0 0.25 0.095
   children [
     Display {
       width 300
@@ -553,7 +510,6 @@ Robot {
             }
             DEF TORSO_LIFT_JOINT SliderJoint {
               jointParameters JointParameters {
-                position 0.26774385695923947
                 dampingConstant 1000
               }
               device [
@@ -568,7 +524,7 @@ Robot {
                 }
               ]
               endPoint DEF TORSO_LIFT Solid {
-                translation 0 0 0.8677438569592395
+                translation 0 0 0.6
                 rotation 0.9273089253913606 0.09850094807618788 0.3611034756376796 0
                 children [
                   DEF ARM_RIGHT_EXTENSION Pose {
@@ -626,7 +582,7 @@ Robot {
                               }
                               DEF ARM_1_JOINT HingeJoint {
                                 jointParameters HingeJointParameters {
-                                  position 1.5999980424103417
+                                  position 0.071
                                   axis 0 0 1
                                   anchor 0.025 0.194 -0.16
                                   dampingConstant 1
@@ -645,8 +601,8 @@ Robot {
                                   }
                                 ]
                                 endPoint DEF ARM_1 Solid {
-                                  translation 0.02500417861145078 0.19409991265788862 -0.171
-                                  rotation 0 0 1 1.5389980424104786
+                                  translation 0.02510000000000011 0.194 -0.171
+                                  rotation 0 0 1 0.010000000000134237
                                   children [
                                     DEF ARM_1_SH1 Shape {
                                       appearance PBRAppearance {
@@ -745,7 +701,6 @@ Robot {
                                     }
                                     DEF ARM_2_JOINT HingeJoint {
                                       jointParameters HingeJointParameters {
-                                        position 0.9999699794840803
                                         axis 0 -1 0
                                         anchor 0.125 0.0195 -0.031
                                         dampingConstant 1
@@ -765,7 +720,7 @@ Robot {
                                       ]
                                       endPoint DEF ARM_2 Solid {
                                         translation 0.125 0.018 -0.031
-                                        rotation 0.7913492684898299 -0.43229906450292166 0.43230065242896626 1.802708624387961
+                                        rotation 1 -1.226752268840602e-17 -1.962132815507183e-17 1.570799999999996
                                         children [
                                           DEF ARM_2_SH1 Shape {
                                             appearance PBRAppearance {
@@ -796,7 +751,6 @@ Robot {
                                           }
                                           DEF ARM_3_JOINT HingeJoint {
                                             jointParameters HingeJointParameters {
-                                              position 4.1113245327163746e-05
                                               axis -1 0 0
                                               anchor 0.0895 0 -0.0015
                                               dampingConstant 1
@@ -816,7 +770,7 @@ Robot {
                                             ]
                                             endPoint DEF ARM_3 Solid {
                                               translation 0.0872 0 -0.0015
-                                              rotation -0.577424846465691 -0.5773011092118805 0.5773248444219302 2.0944837396467464
+                                              rotation -0.5774169358870979 -0.577316932953969 0.577316932953969 2.0944599999999896
                                               children [
                                                 DEF ARM_3_SH1 Shape {
                                                   appearance PBRAppearance {
@@ -913,7 +867,6 @@ Robot {
                                                 }
                                                 DEF ARM_4_JOINT HingeJoint {
                                                   jointParameters HingeJointParameters {
-                                                    position 1.0000160180124247
                                                     axis 0 1 0
                                                     anchor -0.02 -0.027 -0.222
                                                     dampingConstant 1
@@ -933,7 +886,7 @@ Robot {
                                                   ]
                                                   endPoint DEF ARM_4 Solid {
                                                     translation -0.02 -0.027 -0.222
-                                                    rotation -0.9236451809548588 -0.270998689963316 -0.27099684451490025 1.6501438746772286
+                                                    rotation -0.5773502691896253 -0.5773502691896277 -0.5773502691896244 2.0943999999999985
                                                     children [
                                                       DEF ARM_4_SH1 Shape {
                                                         appearance PBRAppearance {
@@ -1030,7 +983,6 @@ Robot {
                                                       }
                                                       DEF ARM_5_JOINT HingeJoint {
                                                         jointParameters HingeJointParameters {
-                                                          position -1.367185866681225e-05
                                                           axis -1 0 0
                                                           anchor -0.162 0.02 0.027
                                                           dampingConstant 1
@@ -1050,7 +1002,7 @@ Robot {
                                                         ]
                                                         endPoint DEF ARM_5 Solid {
                                                           translation -0.162 0.02 0.027
-                                                          rotation 6.836527197106792e-06 -0.9999999999532618 -6.836552309119484e-06 1.5708000000467357
+                                                          rotation 6.229736380641808e-10 -1 -6.229759263765712e-10 1.5707999999999975
                                                           children [
                                                             DEF ARM_5_SH1 Shape {
                                                               appearance PBRAppearance {
@@ -1088,7 +1040,6 @@ Robot {
                                                             }
                                                             DEF ARM_6_JOINT HingeJoint {
                                                               jointParameters HingeJointParameters {
-                                                                position -5.7603366488033105e-06
                                                                 axis 0 1 0
                                                                 anchor 0 0 0.15
                                                                 dampingConstant 1
@@ -1108,7 +1059,7 @@ Robot {
                                                               ]
                                                               endPoint DEF ARM_6 Solid {
                                                                 translation 0 0 0.15
-                                                                rotation -0.5773480513863649 -0.577351378083358 -0.5773513780927646 2.094403326712775
+                                                                rotation -0.5773502685378402 -0.5773502695155172 -0.5773502695155198 2.0944000009776658
                                                                 children [
                                                                   DEF ARM_6_SH1 Shape {
                                                                     appearance PBRAppearance {
@@ -1146,7 +1097,6 @@ Robot {
                                                                   }
                                                                   DEF ARM_7_JOINT HingeJoint {
                                                                     jointParameters HingeJointParameters {
-                                                                      position 1.6000001155598276
                                                                       dampingConstant 1
                                                                       staticFriction 1
                                                                     }
@@ -1164,7 +1114,7 @@ Robot {
                                                                     ]
                                                                     endPoint DEF WRIST Solid {
                                                                       translation 0.05499999999999974 0 0
-                                                                      rotation 0.7070680729736092 -0.01032529622920925 0.70707010150279 3.16224645208369
+                                                                      rotation 0.5773502688840259 0.577350269800828 0.5773502688840234 2.094399999083184
                                                                       children [
                                                                         Pose {
                                                                           rotation 1 0 0 1.570796
@@ -2879,7 +2829,6 @@ Robot {
                                                                                         }
                                                                                         DEF LEFT_GRIPPER_JOINT SliderJoint {
                                                                                           jointParameters JointParameters {
-                                                                                            position 0.06334515053011458
                                                                                             axis -1 0 0
                                                                                             dampingConstant 80
                                                                                           }
@@ -2895,7 +2844,6 @@ Robot {
                                                                                             }
                                                                                           ]
                                                                                           endPoint DEF LEFT_GRIPPER Solid {
-                                                                                            translation -0.06334515053011458 0 0
                                                                                             rotation 0 0 1 3.1415
                                                                                             children [
                                                                                               DEF GRIPPER_SHAPE Group {
@@ -3027,13 +2975,10 @@ Robot {
                                                                                               density -1
                                                                                               mass 0.10998
                                                                                             }
-                                                                                            linearVelocity -0.4651979514666344 0.04379628058498604 -0.048758822273450575
-                                                                                            angularVelocity 0.04518791919695486 -0.02184759615283475 -0.45748351606837745
                                                                                           }
                                                                                         }
                                                                                         DEF RIGHT_GRIPPER_JOINT SliderJoint {
                                                                                           jointParameters JointParameters {
-                                                                                            position 0.024272239052352974
                                                                                             axis 1 0 0
                                                                                             dampingConstant 80
                                                                                           }
@@ -3049,7 +2994,6 @@ Robot {
                                                                                             }
                                                                                           ]
                                                                                           endPoint DEF RIGHT_GRIPPER Solid {
-                                                                                            translation 0.024272239052352974 0 0
                                                                                             rotation 0 0 -1 0
                                                                                             children [
                                                                                               Pose {
@@ -3185,8 +3129,6 @@ Robot {
                                                                                               density -1
                                                                                               mass 0.10998
                                                                                             }
-                                                                                            linearVelocity -0.4804476509839237 0.00638981427753607 -0.048479783911678356
-                                                                                            angularVelocity 0.045187933243757285 -0.021847572899353775 -0.4574842342290231
                                                                                           }
                                                                                         }
                                                                                       ]
@@ -3319,8 +3261,6 @@ Robot {
                                                                         mass 0.234
                                                                       }
                                                                       translationStep 0.001
-                                                                      linearVelocity -0.37704916625150176 -0.02373070905059813 -0.04087550391593395
-                                                                      angularVelocity 0.045187891517572035 -0.02184756906720432 -0.4574834942818932
                                                                     }
                                                                   }
                                                                 ]
@@ -3339,8 +3279,6 @@ Robot {
                                                                   density -1
                                                                   mass 0.370063
                                                                 }
-                                                                linearVelocity -0.3477114043834211 -0.036163342876685524 -0.03738385414561558
-                                                                angularVelocity 0.045187656600054554 -0.02184740420749317 -0.45748075925846415
                                                               }
                                                             }
                                                           ]
@@ -3383,8 +3321,6 @@ Robot {
                                                             density -1
                                                             mass 1.655819
                                                           }
-                                                          linearVelocity -0.30559087956706243 -0.05401385588704778 -0.03237042549365049
-                                                          angularVelocity 0.04518672815832805 -0.021849083385639793 -0.45742038436757704
                                                         }
                                                       }
                                                     ]
@@ -3417,8 +3353,6 @@ Robot {
                                                       density -1
                                                       mass 1.432697
                                                     }
-                                                    linearVelocity -0.2273652467710922 -0.0834098524694686 -0.023241174395859276
-                                                    angularVelocity 0.04513361907356535 -0.021978130280197433 -0.4574191181638593
                                                   }
                                                 }
                                               ]
@@ -3452,8 +3386,6 @@ Robot {
                                                 mass 2.343502
                                               }
                                               translationStep 0.0001
-                                              linearVelocity -0.17035864350744503 -0.10966767388079528 -0.01635186582773599
-                                              angularVelocity 0.04513270315753206 -0.021977613775719 -0.45740927955314936
                                             }
                                           }
                                         ]
@@ -3486,8 +3418,6 @@ Robot {
                                           density -1
                                           mass 1.800397
                                         }
-                                        linearVelocity -0.11545639459622839 -0.11294710541533716 -0.010787257908057105
-                                        angularVelocity 0.045041620104933164 -0.022192621920069655 -0.45704905439858284
                                       }
                                     }
                                   ]
@@ -3536,8 +3466,6 @@ Robot {
                                     density -1
                                     mass 1.563428
                                   }
-                                  linearVelocity -0.08727939855357318 -0.13498644223404654 -0.0069348271372487585
-                                  angularVelocity 0.045041380080259145 -0.022184676556975036 -0.45703398117791727
                                 }
                               }
                             ]
@@ -3675,7 +3603,6 @@ Robot {
                   }
                   DEF NECK_JOINT HingeJoint {
                     jointParameters HingeJointParameters {
-                      position 7.785365225891114e-07
                       axis 0 0 1
                       anchor 0.182 0 0
                       dampingConstant 0.5
@@ -3695,7 +3622,6 @@ Robot {
                     ]
                     endPoint DEF NECK Solid {
                       translation 0.182 0 0
-                      rotation 0 0 0.9999999999999999 7.782915149450706e-07
                       children [
                         Shape {
                           appearance PBRAppearance {
@@ -3747,7 +3673,6 @@ Robot {
                         }
                         DEF HEAD_JOINT HingeJoint {
                           jointParameters HingeJointParameters {
-                            position -3.636678886920208e-07
                             axis 0 -1 0
                             anchor 0.005 0 0.098
                             dampingConstant 0.5
@@ -3767,7 +3692,7 @@ Robot {
                           ]
                           endPoint DEF HEAD Solid {
                             translation 0.005 0 0.098
-                            rotation 0.9999999999999668 1.8260593478963896e-07 -1.8260660553898492e-07 1.5708000000000315
+                            rotation 1 7.726583557779145e-10 -7.726611929785471e-10 1.5707999999999982
                             children [
                               DEF CAMERA Pose {
                                 translation 0.107 0.0802 0
@@ -4008,8 +3933,6 @@ Robot {
                               density -1
                               mass 0.66123
                             }
-                            linearVelocity -0.09609984076446454 -0.13184718167605786 -0.007960522557266425
-                            angularVelocity 0.04503940755429809 -0.022177785075270053 -0.45701585391877836
                           }
                         }
                       ]
@@ -4040,8 +3963,6 @@ Robot {
                         density -1
                         mass 0.6222
                       }
-                      linearVelocity -0.07510945950947388 -0.13431107120833516 -0.005774041893924025
-                      angularVelocity 0.045039354724915534 -0.022177730735028746 -0.45701579303430734
                     }
                   }
                 ]
@@ -4088,8 +4009,6 @@ Robot {
                   density -1
                   mass 6.93198
                 }
-                linearVelocity -0.01818084362713977 -0.1452093471643281 0.0003629154270094235
-                angularVelocity 0.04503913830828801 -0.022177288810696884 -0.45702326913709534
               }
             }
           ]
@@ -4338,8 +4257,7 @@ Robot {
       rotationStep 0.001
     }
     DEF BUMPER TouchSensor {
-      translation 7.237131879431202e-06 -3.9613842085506334e-06 0.02999590451921523
-      rotation 0.03926384105706546 -0.11346011600826304 -0.9927664140475527 8.505578560436178e-09
+      translation 0 0 0.03
       children [
         DEF BUMPER_SHAPE Shape {
           appearance PBRAppearance {
@@ -4369,8 +4287,6 @@ Robot {
         density -1
         mass 0.25821
       }
-      linearVelocity 0.019652960182159864 -0.1143507155458389 0.002592967737808751
-      angularVelocity 0.045021787739182056 -0.02215297451102603 -0.4569988793143038
     }
     DEF DISTANCE_SENSOR_BACK_LEFT DistanceSensor {
       translation -0.183 0.183 0.173
@@ -4457,7 +4373,6 @@ Robot {
     }
     DEF RIGHT_WHEEL_JOINT HingeJoint {
       jointParameters HingeJointParameters {
-        position 2.486948551559557
         axis 0 1 0
         anchor 0 -0.2022 0
         suspensionAxis 0 0 1
@@ -4474,8 +4389,8 @@ Robot {
         }
       ]
       endPoint DEF RIGHT_WHEEL Solid {
-        translation 0.00020702959181152656 -0.2017188648913213 -5.241911043247267e-05
-        rotation -0.233454403305396 -0.6875653479274747 0.6875703119730318 3.6002833497751157
+        translation -0.00013231247351772366 -0.2017188648913213 0.0001676377772931887
+        rotation -0.9999999999999815 1.358052609733056e-07 1.3581085605621316e-07 4.712381852890714
         children [
           DEF BIG_WHEEL Group {
             children [
@@ -4573,13 +4488,10 @@ Robot {
           density -1
           mass 1
         }
-        linearVelocity 0.05499895291426935 -0.025397503413588044 0.0019606887219636047
-        angularVelocity -1.392011823425519 0.5268376385382717 -0.46129874363850965
       }
     }
     DEF LEFT_WHEEL_JOINT HingeJoint {
       jointParameters HingeJointParameters {
-        position 11.677785296100355
         axis 0 1 0
         anchor 0 0.2022 0
         suspensionAxis 0 0 1
@@ -4597,7 +4509,7 @@ Robot {
       ]
       endPoint DEF LEFT_WHEEL Solid {
         translation 0 0.202 0
-        rotation 0.8295349732847991 -0.39488642831108095 0.3948878788125878 1.756611404545178
+        rotation 1 -5.495313512695667e-16 3.14017915011181e-16 1.570799999999998
         children [
           Pose {
             rotation -1 0 0 3.141593
@@ -4700,13 +4612,10 @@ Robot {
           density -1
           mass 1
         }
-        linearVelocity -0.01063878729538022 -0.19761319161257784 0.003548341660998574
-        angularVelocity 2.0893780791541117 -0.8014577119369185 -0.4657788556580355
       }
     }
     DEF CASTER_WHEEL_FRONT_RIGHT_JOINT HingeJoint {
       jointParameters HingeJointParameters {
-        position -0.3063981624957491
         axis 0 0 1
         anchor 0.1695 -0.102 -0.0335
         suspensionSpringConstant 250000
@@ -4714,17 +4623,15 @@ Robot {
       }
       endPoint DEF CASTER_WHEEL_FRONT_RIGHT Solid {
         translation 0.1695 -0.102 -0.0335
-        rotation 0 0 -1 0.3063981624957495
         children [
           DEF SMALL_WHEEL_JOINT HingeJoint {
             jointParameters HingeJointParameters {
-              position 37.784646464170876
               axis 0 1 0
               anchor -0.016 0 -0.04
             }
             endPoint DEF SMALL_WHEEL Solid {
               translation -0.016 0 -0.04
-              rotation -0.9981737463098146 0.04271509553818351 0.042715252439778424 1.5726279223004547
+              rotation -1 2.943917953229827e-17 8.831753859689482e-17 1.5707999999999944
               children [
                 DEF SMALL_WHEEL_SHAPE Shape {
                   appearance PBRAppearance {
@@ -4779,8 +4686,6 @@ Robot {
                 density -1
                 mass 0.088558
               }
-              linearVelocity -0.03038162206735485 -0.037452633735541495 -0.004708964416417975
-              angularVelocity 1.5026478525307274 -1.2084923584072675 -0.07413032181334872
             }
           }
           DEF CASTER_SUPPORT Shape {
@@ -4825,13 +4730,10 @@ Robot {
           density -1
           mass 0.051448
         }
-        linearVelocity -0.031336747856513705 -0.03780604111796118 -0.005616065729979972
-        angularVelocity 0.0402869303767973 -0.03465888613669337 -0.04432728709243785
       }
     }
     DEF CASTER_WHEEL_FRONT_LEFT_JOINT HingeJoint {
       jointParameters HingeJointParameters {
-        position -0.08830211533052156
         axis 0 0 1
         anchor 0.1695 0.102 -0.0335
         suspensionSpringConstant 250000
@@ -4839,17 +4741,15 @@ Robot {
       }
       endPoint DEF CASTER_WHEEL_FRONT_LEFT Solid {
         translation 0.1695 0.102 -0.0335
-        rotation 0 0 -0.9999999999999999 0.08830211533052192
         children [
           DEF SMALL_WHEEL_JOINT HingeJoint {
             jointParameters HingeJointParameters {
-              position 44.51056997930421
               axis 0 1 0
               anchor -0.016 0 -0.04
             }
             endPoint DEF SMALL_WHEEL Solid {
               translation -0.016 0 -0.04
-              rotation 0.9340118506780896 -0.2526077928445724 -0.2526087207265096 4.6441721243790415
+              rotation -1 -1.5700895750559058e-16 -1.5700895750559058e-16 1.5707999999999969
               children [
                 DEF SMALL_WHEEL_SHAPE Shape {
                   appearance PBRAppearance {
@@ -4904,8 +4804,6 @@ Robot {
                 density -1
                 mass 0.088558
               }
-              linearVelocity -0.06200569809456883 -0.12526624034275288 -0.0037761255157661394
-              angularVelocity 5.030510517253046 -2.4659064460802114 -0.14616718558437347
             }
           }
           DEF CASTER_SUPPORT Shape {
@@ -4950,13 +4848,10 @@ Robot {
           density -1
           mass 0.051448
         }
-        linearVelocity -0.06423370351343645 -0.12514978348820144 -0.0046199520332411235
-        angularVelocity 0.04117444396771874 -0.03213074411882822 -0.12940596109404368
       }
     }
     DEF CASTER_WHEEL_BACK_RIGHT_JOINT HingeJoint {
       jointParameters HingeJointParameters {
-        position -4.934589158571218
         axis 0 0 1
         anchor -0.1735 -0.102 -0.0335
         suspensionSpringConstant 250000
@@ -4964,17 +4859,15 @@ Robot {
       }
       endPoint DEF CASTER_WHEEL_BACK_RIGHT Solid {
         translation -0.1735 -0.102 -0.0335
-        rotation 0 0 -1 4.934589158571218
         children [
           DEF SMALL_WHEEL_JOINT HingeJoint {
             jointParameters HingeJointParameters {
-              position 62.22318752464222
               axis 0 1 0
               anchor -0.016 0 -0.04
             }
             endPoint DEF SMALL_WHEEL_JOINT Solid {
               translation -0.016 0 -0.04
-              rotation -0.9138979812511396 -0.2870451833386698 -0.28704623771643706 1.660714915558796
+              rotation -1 -1.1775671812919303e-16 3.925223937639768e-17 1.570799999999995
               children [
                 DEF SMALL_WHEEL_SHAPE Shape {
                   appearance PBRAppearance {
@@ -5029,8 +4922,6 @@ Robot {
                 density -1
                 mass 0.088558
               }
-              linearVelocity 0.10304619834306752 -0.11096814787129149 0.010197429650756864
-              angularVelocity 4.3262696782111805 5.835963456579481 1.6206437147133648
             }
           }
           DEF CASTER_SUPPORT Shape {
@@ -5075,13 +4966,10 @@ Robot {
           density -1
           mass 0.051448
         }
-        linearVelocity 0.11256998310535271 -0.0975286209558039 0.010839124410066119
-        angularVelocity 0.024558922215324092 -0.07641523917465885 1.3392115050462479
       }
     }
     DEF CASTER_WHEEL_BACK_LEFT_JOINT HingeJoint {
       jointParameters HingeJointParameters {
-        position -5.384296613894915
         axis 0 0 1
         anchor -0.1735 0.102 -0.0335
         suspensionSpringConstant 250000
@@ -5089,17 +4977,15 @@ Robot {
       }
       endPoint DEF CASTER_WHEEL_BACK_LEFT Solid {
         translation -0.1735 0.102 -0.0335
-        rotation 0 0 -0.9999999999999999 5.384296613894915
         children [
           DEF SMALL_WHEEL_JOINT HingeJoint {
             jointParameters HingeJointParameters {
-              position 65.36073109147347
               axis 0 1 0
               anchor -0.016 0 -0.04
             }
             endPoint DEF SMALL_WHEEL Solid {
               translation -0.016 0 -0.04
-              rotation -0.21827606865388438 0.6900550918787983 0.6900576265973358 2.7117834515131856
+              rotation -1 1.9626119688198835e-17 -2.1588731657018719e-16 1.5707999999999958
               children [
                 DEF SMALL_WHEEL_SHAPE Shape {
                   appearance PBRAppearance {
@@ -5154,8 +5040,6 @@ Robot {
                 density -1
                 mass 0.088558
               }
-              linearVelocity 0.06987256765414357 -0.18755698970047943 0.011846181781779683
-              angularVelocity 9.076092843099406 4.92075590833965 1.16862402813578
             }
           }
           DEF CASTER_SUPPORT Shape {
@@ -5200,8 +5084,6 @@ Robot {
           density -1
           mass 0.051448
         }
-        linearVelocity 0.0792653906279209 -0.1826983422910861 0.011939560022858843
-        angularVelocity 0.029767417535575314 -0.06262193270651631 0.8840781939954848
       }
     }
   ]
@@ -5242,9 +5124,10 @@ Robot {
     mass 28.26649
   }
   controller "mission_control"
+  controllerArgs [
+    "fetch_honey"
+  ]
   supervisor TRUE
-  linearVelocity 0.022029774009508774 -0.12026550267903195 0.0031145808812282853
-  angularVelocity 0.04502178420699203 -0.022152972440086592 -0.45699881386719643
 }
 SolidBox {
   translation -1.23 1.645 0.03
@@ -5344,10 +5227,6 @@ Window {
   windowSillSize 0.01 0.05
 }
 Fridge {
-  hidden position_0_0 -4.390548339814274e-05
-  hidden position_0_1 4.3905502892704605e-05
-  hidden rotation_1 0 0 -1 4.3905486947003926e-05
-  hidden rotation_2 0 0 1 4.3905507176325515e-05
   translation 1.8 -1.57 0
   rotation 0 0 -1 3.14159
 }
@@ -5488,163 +5367,159 @@ Chair {
   translation -1.12 -1.87 0
 }
 Carafe {
-  translation -0.8001619142350715 -0.694142933478765 0.7388249026218354
-  rotation 0.000549016039445022 0.0002307665238953335 0.9999998226640842 -2.3457801266945366
+  translation -0.800161 -0.694142 0.738809
+  rotation 0 0 1 -2.34578
 }
 WaterBottle {
-  translation 2.032310019377189 -1.387279997174762 0.583373242037337
-  rotation 0.7148231951093621 -0.11131103038206547 -0.6903894945962936 2.721859905420659
+  translation 2.03231 -1.38728 0.583373
+  rotation -0.7148233461993952 0.11131105390957045 0.6903893343656462 -2.72186
   name "water bottle(1)"
 }
 WaterBottle {
-  translation -0.48093299999999994 -1.15603 0.7378038001968144
-  rotation -0.003457659250421056 -0.9991185845364091 -0.04183418012188352 3.0149209287471225e-16
+  translation -0.480933 -1.15603 0.737804
   name "water bottle(2)"
 }
 WaterBottle {
-  translation 2.041540016834048 -1.645060001468299 0.583373242037127
-  rotation 0.3271619369838887 -0.8562248350786044 -0.3998050759852443 1.7637896844662673
+  translation 2.04154 -1.64506 0.583373
+  rotation 0.327161956995545 -0.8562248874518146 -0.39980494744684253 1.76379
   name "water bottle(3)"
 }
 WaterBottle {
-  translation 2.026139954181445 -1.7319199997113706 0.5833732420322172
-  rotation 0.06938932052465868 -0.9947242942298039 -0.07555594394979603 1.5778410316776958
+  translation 2.02614 -1.73192 0.583373
+  rotation -0.06938932011365996 0.9947242883375433 0.07555602190118206 -1.57784
   name "water bottle(4)"
 }
 WaterBottle {
-  translation 2.0473100240774804 -1.8254399999563147 0.583373242037689
-  rotation 0.6779868166504486 -0.28733892229431895 -0.6765871859434895 2.5804098426558086
+  translation 2.04731 -1.82544 0.583373
+  rotation 0.6779869858778702 -0.28733899401487245 -0.6765869859070315 2.58041
 }
 BeerBottle {
-  translation 2.0412800000000004 -1.6112399999999998 0.29521185829382307
-  rotation 6.246449599225667e-15 -9.675462826528722e-15 -1 0.2617989999999976
+  translation 2.04128 -1.61124 0.297922
+  rotation 0 0 1 -0.261799
   name "beer bottle(1)"
 }
 Can {
-  translation 1.94171 -1.53737 0.36103132967390966
-  rotation -4.670013412221507e-15 -7.044941625799091e-16 -1 0.08885149999999996
+  translation 1.94171 -1.53737 0.361031
+  rotation 0 0 1 -0.0888515
   name "can(1)"
 }
 Can {
-  translation 1.7218 -1.51734 0.36103133034216434
-  rotation 1.173122093488277e-16 2.4504639645028416e-16 0.9999999999999999 -2.8791699999999993
+  translation 1.7218 -1.51734 0.361031
+  rotation 0 0 1 -2.87917
 }
 BeerBottle {
-  translation 1.8872499999999999 -1.71215 0.295211858199027
-  rotation 1.891179640472454e-15 2.856877647917545e-15 1 0.7853979999999998
+  translation 1.88725 -1.71215 0.297922
+  rotation 0 0 1 0.785398
   name "beer bottle(2)"
 }
 BeerBottle {
-  translation 1.8951999999999993 -1.3844600000000007 0.2952118581990272
-  rotation 3.2902462256056472e-15 3.1674635216970214e-15 1 -2.879789999999999
+  translation 1.8952 -1.38446 0.297922
+  rotation 0 0 1 -2.87979
 }
 FruitBowl {
-  translation 1.7718000000044196 -1.6273400000004932 0.04945063994263431
-  rotation -0.15478305699583303 -0.9877601892621104 0.01928765864237002 0.00012994830466645234
+  translation 1.7718 -1.62734 0.0494506
+  rotation -0.1548220067669573 -0.9877540431727349 0.019289800843118245 0.000129934
   name "fruit bowl(1)"
 }
 FruitBowl {
-  translation -0.6855010000004292 -1.7539999999985572 0.7395094995078983
-  rotation -0.015054114285455182 -0.08937427654021064 0.9958843368263175 0.0020858697557238582
+  translation -0.685501 -1.754 0.739509
+  rotation -0.015058203285751137 -0.08937491950191119 0.9958842173053211 0.00208587
 }
 Apple {
-  translation -0.7428251063653235 -1.6976784215852232 0.7991758976341067
-  rotation 0.39260077144674 -0.3262411788097036 0.8599019290060231 3.0330230312788204
+  translation -0.742825 -1.69768 0.799176
+  rotation 0.39258687458637637 -0.3262478957786582 0.8599057252992903 3.033
   name "apple(1)"
 }
 Apple {
-  translation -0.7426080785809845 -1.8075599696190559 0.7992299455856215
-  rotation 0.7079129122912583 0.47425162052735875 -0.5233972764912742 1.983206788264272
+  translation -0.742608 -1.80756 0.79923
+  rotation -0.7079189231504496 -0.47425294851652544 0.5233879431825781 -1.98321
   name "apple(2)"
 }
 Apple {
-  translation -0.6426463485145922 -1.810324747245456 0.7992027061474953
-  rotation -0.07308689676045396 0.9139626285036047 -0.3991623970525138 1.938792784892337
+  translation -0.642646 -1.81032 0.799203
+  rotation -0.07314981379148286 0.913958172315387 -0.39916107525683037 1.9388
 }
 Orange {
-  translation -0.6910000973026372 -1.7524432522201427 0.8647421143744376
-  rotation 0.6142240933268889 0.545241050988929 0.5704743285137812 1.9509254416466708
+  translation -0.691001 -1.75244 0.864743
+  rotation 0.6141928211894558 0.5452778412527399 0.5704728339176975 1.95096
   name "orange(1)"
 }
 Orange {
-  translation 1.7143676067658546 -1.5697416503459074 0.10921032771776355
-  rotation 0.5578584011909675 0.07360581913192284 0.8266657048714289 -2.2960079941160747
+  translation 1.71437 -1.56974 0.10921
+  rotation 0.557869281400784 0.07361643713365086 0.8266574169830693 -2.296
   name "orange(2)"
 }
 Orange {
-  translation -0.640068135956197 -1.6966981273303423 0.7992403211850462
-  rotation -0.45160403558154155 0.8371498675694341 0.3085998935109092 -2.320564578671554
+  translation -0.640069 -1.6967 0.799241
+  rotation 0.4515301058070621 -0.8371741961750524 -0.30864207232410534 2.32063
   name "orange(3)"
 }
 Orange {
-  translation 1.7179586635189459 -1.6848675138560534 0.10919024735364338
-  rotation -0.10916483283835218 0.9418588948437157 -0.3177811534297611 3.054176596273476
+  translation 1.71796 -1.68487 0.109193
+  rotation -0.10918602600505727 0.9418642243257126 -0.31775807568108533 3.05418
   name "orange(4)"
 }
 Orange {
-  translation 1.8440791792927178 -1.69976634733303 0.1549663066719217
-  rotation -0.12280586676990388 0.2557540785178742 0.9589100950602021 1.9051985839159553
+  translation 1.84408 -1.69977 0.154967
+  rotation -0.12274806190769377 0.2557241289738577 0.9589254836317924 1.90522
   name "orange(5)"
 }
 Orange {
-  translation 1.6894496010868858 -1.6281675009455416 0.18625219796852147
-  rotation 0.6696168854826713 -0.27901301125898414 0.6883058667661354 -2.627079911006239
+  translation 1.68945 -1.62817 0.186255
+  rotation 0.6695937633170603 -0.2790219013734484 0.6883247566961703 -2.62709
   name "orange(6)"
 }
 Orange {
-  translation 1.8455887097543622 -1.553462251267144 0.15965244506561416
-  rotation -0.6980889255638609 -0.6932136516470555 0.17923918426295352 1.0030705523225516
+  translation 1.84559 -1.55346 0.159653
+  rotation 0.698140151992109 0.6931561509070421 -0.17926203902714277 -1.00307
   name "orange(7)"
 }
 Orange {
-  translation 1.7975710555736442 -1.6246210810086477 0.10900576534327576
-  rotation -0.18687985635900703 0.8244402928105394 0.5342041958630696 0.6455132195119777
+  translation 1.79757 -1.62462 0.109011
+  rotation -0.18692596769947598 0.8244358575387327 0.5341949076919292 0.645473
 }
 Cookware {
-  translation 1.6673572096630431 1.3201620164720262 0.890035102232741
-  rotation 0.0006362684070086806 -0.0004968784946991146 0.9999996741370848 2.3581195161206794
+  translation 1.66736 1.32016 0.889978
+  rotation -0.00013209197663616574 -0.0003169679439361368 0.9999999410415142 2.35812
 }
 Lid {
-  translation 1.6666607952266292 1.3196221239390418 0.9605287786169029
-  rotation 0.8702816144913631 0.4925542690565508 -0.0004511235677509714 0.0014923210214541464
+  translation 1.66658 1.31968 0.960471
+  rotation 0.7058501662909072 -0.7083611668824727 0 0.000636256
 }
 WoodenSpoon {
-  translation 1.248559978589088 1.3760500499763062 0.8892104107940774
-  rotation 0.0003004061911820341 -0.0025943558307514655 0.9999965895311561 0.2307929234175004
+  translation 1.24856 1.37605 0.889212
+  rotation 0 -0.0026826514244551996 0.9999964016841935 0.230793
 }
 Fork {
-  translation -0.9701729345368187 -0.9009309088621572 0.7411398509830236
-  rotation -0.003296325350853985 -0.2886489105702128 -0.957429339776994 0.023879089197167743
+  translation -0.970173 -0.900931 0.741142
+  rotation 0 0.2907751281873712 0.9567914217987209 -0.02389530717958621
 }
 Spoon {
-  translation -0.9696029908050869 -1.2214 0.7424989160071873
-  rotation -7.59320363542692e-15 -1 -2.728262900063392e-15 0.033861182437689145
+  translation -0.969982 -1.2214 0.742841
+  rotation 0 -1 0 0.0370441
   name "spoon(1)"
 }
 Spoon {
-  translation -0.8455824255881458 -1.0212934003860463 0.7424986268872449
-  rotation 0.017327364453234344 -0.017264484840519147 0.9997008052433969 1.5289429020626406
+  translation -0.849274 -1.02146 0.742
+  rotation 0.018569307231111266 -0.01871580728816015 0.9996523892766468 1.56334
   type "tea"
 }
 Knife {
-  translation -0.9899830610282906 -1.1512099391883053 0.7391082103114796
-  rotation 0.9999871868471139 1.753433034186623e-07 -0.005062226937323978 -3.1415545932004156
+  translation -0.989983 -1.15121 0.739111
+  rotation 0.9999873652176937 0 -0.005026868306876098 3.14156
 }
 Plate {
-  translation -0.9700129321447145 -1.0300002177539005 0.739954296585604
-  rotation -9.291609936208444e-05 -2.1685620387624106e-05 0.9999999954481663 -3.1415900111156416
+  translation -0.970012 -1.03 0.739941
+  rotation 0 0 1 -3.14159
 }
 Glass {
-  translation -0.800252 -1 0.7389666463502064
-  rotation 0.7591238325433546 0.6506775707514469 0.018700422072364213 7.836637565658062e-16
+  translation -0.800252 -1 0.738967
 }
 Wineglass {
-  translation -0.787671 -1.0978 0.7395607602373828
-  rotation -0.10175234172153239 -0.4918029819330207 -0.8647405899551457 2.9497301808284494e-16
+  translation -0.787671 -1.0978 0.739561
 }
 Solid {
-  translation 0.02802168067533838 -1.0417731583616159 1.1496960122452313
-  rotation 0.020327840934228476 -0.005645566304612573 -0.999777428462982 2.61239939762849
+  translation 1.71438 0.704 0.889402
   children [
     Shape {
       appearance PBRAppearance {
@@ -5715,12 +5590,10 @@ Solid {
   recognitionColors [
     1 0.5 0
   ]
-  linearVelocity -0.5006802527519715 0.03655207470234893 -0.05192115113405229
-  angularVelocity 0.04524342249783189 -0.021711168189638114 -0.457478729044575
 }
 DEF jam_jar_(1) Solid {
-  translation 1.71 -0.302 0.8894007462686851
-  rotation 1.3446172274495757e-17 -2.3189576321125815e-16 1 2.63
+  translation 1.71 -0.302 0.89
+  rotation 0 0 1 2.63
   children [
     Shape {
       appearance PBRAppearance {
@@ -5810,8 +5683,8 @@ DEF jam_jar_(1) Solid {
   ]
 }
 DEF jam_jar Solid {
-  translation 1.93 0.494 0.8894007469390639
-  rotation 1.1157674201843494e-17 -1.4185311562249747e-16 0.9999999999999999 3.14
+  translation 1.93 0.494 0.89
+  rotation 0 0 1 3.14
   children [
     Shape {
       appearance PBRAppearance {
@@ -5901,30 +5774,30 @@ DEF jam_jar Solid {
   ]
 }
 CerealBox {
-  translation 2.02479 0.333777 0.8896076003911216
-  rotation 2.7140176995298978e-18 1.0667081668211793e-18 1 -2.6189053071795856
+  translation 2.02479 0.333777 0.889608
+  rotation 0 0 1 -2.618905307179586
   name "cereal box(1)"
 }
 CerealBox {
-  translation 2.05319 0.0376474 0.8896076003911216
-  rotation 1.2779852324161273e-17 -1.2628247308645457e-17 1 2.87916
+  translation 2.05319 0.0376474 0.889608
+  rotation 0 0 1 2.87916
   name "cereal box(2)"
   textureUrl [
     "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/kitchen/breakfast/protos/textures/cereal_box_1.jpg"
   ]
 }
 CerealBox {
-  translation 1.85996 -0.607243 0.8896076003911216
-  rotation -2.367422910505996e-17 -5.586324546527685e-18 1 2.87972
+  translation 1.85996 -0.607243 0.889608
+  rotation 0 0 1 2.87972
   textureUrl [
     "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/kitchen/breakfast/protos/textures/cracotte_box.jpg"
   ]
 }
 BiscuitBox {
-  translation -1.01032 -1.74796 0.7398430399605868
-  rotation -3.5624355251171234e-17 -7.34295701363385e-17 -1 0.262068
+  translation -1.01032 -1.74796 0.739843
+  rotation 0 0 1 -0.262068
 }
 DEF marker PingPongBall {
-  translation 1 -0.68 0.019997793080003923
+  translation 1 -0.68 0.02
   name "marker"
 }
