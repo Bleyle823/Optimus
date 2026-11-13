@@ -12,6 +12,7 @@ KEYS_DIR = ROOT / "keys"
 SETTLEMENT_DIR = ROOT / "settlement"
 OUTBOX = SETTLEMENT_DIR / "outbox.json"
 RECEIPTS_DIR = SETTLEMENT_DIR / "receipts"
+PEAQ_STATUS = SETTLEMENT_DIR / "peaq_status.json"
 
 
 def load() -> dict:
