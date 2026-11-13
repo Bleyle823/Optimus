@@ -262,6 +262,9 @@ def settle_outbox(once: bool = True, offline: bool = False) -> dict | None:
             RECEIPTS_DIR.mkdir(parents=True, exist_ok=True)
             out = RECEIPTS_DIR / f"{claim_id}.json"
             prev = json.loads(out.read_text()) if out.exists() else {}
+            from hotel.peaq import attach_peaq
+
+            attach_peaq(receipt)
             prev.update(receipt)
             out.write_text(json.dumps(prev, indent=2) + "\n")
             print(json.dumps(receipt, indent=2, default=str))

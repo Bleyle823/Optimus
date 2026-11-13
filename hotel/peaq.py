@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from hotel.config import RECEIPTS_DIR, ROOT, load
+from hotel.config import PEAQ_STATUS, RECEIPTS_DIR, ROOT, SETTLEMENT_DIR
 from hotel.keys import load_role
 
 
@@ -22,7 +22,6 @@ def _parse_version(text: str) -> tuple[int, int, int] | None:
 
 
 def peaq_dry() -> dict:
-    cfg = load()
     robot = None
     try:
         robot = load_role("robot")
@@ -42,6 +41,7 @@ def peaq_dry() -> dict:
     }
     if not exe:
         info["status"] = "cli_missing"
+        write_peaq_status(info)
         print(json.dumps(info, indent=2))
         print("Install: pip install 'peaq-os-cli[solana,ows]>=0.0.19'  (Python 3.10+)")
         return info
@@ -52,6 +52,7 @@ def peaq_dry() -> dict:
         info["version"] = None if not parsed else ".".join(map(str, parsed))
         if parsed and parsed < MIN_CLI:
             info["status"] = "cli_too_old"
+            write_peaq_status(info)
             print(json.dumps(info, indent=2))
             return info
     except Exception as e:
@@ -66,8 +67,64 @@ def peaq_dry() -> dict:
     except Exception as e:
         info["status"] = "dry_run_error"
         info["error"] = str(e)
+    write_peaq_status(info)
     print(json.dumps(info, indent=2)[:8000])
     return info
+
+
+def write_peaq_status(info: dict) -> dict:
+    """Gitignored machine identity beside receipts. Never a live Solana bond."""
+    slim = {
+        "solana_address": info.get("solana_owner"),
+        "near_implicit": info.get("near_implicit"),
+        "cli_version": info.get("version"),
+        "status": info.get("status"),
+        "home_chain": 5,
+        "live": False,
+        "command": "peaqos activate --chain solana --dry-run",
+        "note": info.get("note"),
+    }
+    SETTLEMENT_DIR.mkdir(parents=True, exist_ok=True)
+    PEAQ_STATUS.write_text(json.dumps(slim, indent=2) + "\n", encoding="utf-8")
+    info["status_path"] = str(PEAQ_STATUS)
+    return slim
+
+
+def activity_payload(receipt: dict) -> dict:
+    return {
+        "trustLevel": 0,
+        "sourceChainId_note": "NEAR is not in the trust-1 allow list (0, 3338, 8453); hashes go in rawData",
+        "rawData": {
+            "claim_id": receipt.get("claim_id"),
+            "skill_id": receipt.get("skill_id"),
+            "complete_tx": (receipt.get("complete") or {}).get("tx"),
+            "pay_supplier_tx": (receipt.get("pay_supplier") or {}).get("tx"),
+            "telemetry_hash": receipt.get("telemetry_hash"),
+            "refused_quote": receipt.get("refused_quote"),
+            "webots_success": receipt.get("webots_success"),
+        },
+        "revenue_event": False,
+        "reason": "skill prices in config/hotel.json are under the $10 total_revenue floor; activity only",
+        "submitted": False,
+    }
+
+
+def attach_peaq(receipt: dict) -> dict:
+    """Record Solana machine identity on the NEAR receipt. Does not submit on mainnet."""
+    dry = peaq_dry()
+    activity = activity_payload(receipt)
+    receipt["solana_address"] = dry.get("solana_owner")
+    receipt["near_implicit"] = dry.get("near_implicit")
+    receipt["peaq"] = {
+        "solana_address": dry.get("solana_owner"),
+        "near_implicit": dry.get("near_implicit"),
+        "status": dry.get("status"),
+        "cli_version": dry.get("version"),
+        "home_chain": 5,
+        "activity": activity,
+        "submitted": False,
+    }
+    return receipt
 
 
 def peaq_live() -> dict:
@@ -89,21 +146,7 @@ def peaq_event(receipt_path: str) -> dict:
     if not path.exists():
         path = RECEIPTS_DIR / receipt_path
     receipt = json.loads(path.read_text(encoding="utf-8"))
-    payload = {
-        "trustLevel": 0,
-        "sourceChainId_note": "NEAR is not in the trust-1 allow list (0, 3338, 8453); hashes go in rawData",
-        "rawData": {
-            "claim_id": receipt.get("claim_id"),
-            "skill_id": receipt.get("skill_id"),
-            "complete_tx": (receipt.get("complete") or {}).get("tx"),
-            "pay_supplier_tx": (receipt.get("pay_supplier") or {}).get("tx"),
-            "telemetry_hash": receipt.get("telemetry_hash"),
-            "refused_quote": receipt.get("refused_quote"),
-            "webots_success": receipt.get("webots_success"),
-        },
-        "revenue_event": False,
-        "reason": "skill prices in config/hotel.json are under the $10 total_revenue floor; activity only",
-    }
+    payload = activity_payload(receipt)
     if os.getenv("PEAQ_LIVE") == "1":
         payload["submit"] = "caller must use peaq EventRegistry with the owner key; not auto-broadcast here"
     print(json.dumps(payload, indent=2))

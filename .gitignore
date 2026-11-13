@@ -15,6 +15,7 @@ __pycache__/
 venv/
 node_modules/
 settlement/outbox.json
+settlement/peaq_status.json
 settlement/receipts/*.json
 !settlement/receipts/.gitkeep
 controllers/mission_control/__pycache__/
