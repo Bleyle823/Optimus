@@ -41,6 +41,8 @@ Copy `.env.example` to `.env`. Never commit keys. `keys/` is gitignored.
 
 ## Run end-to-end (Webots + settlement)
 
+Operator walkthrough (NEAR, Solana machine registration, Intents, where to follow txs): [docs/run-end-to-end.md](docs/run-end-to-end.md).
+
 Webots uses Python **3.9** (`controllers/mission_control/runtime.ini`). `hotel/` needs Python **3.10+**. The controller never imports `hotel`; it writes `settlement/outbox.json` and overlays the receipt with `Supervisor.setLabel`.
 
 `worlds/kitchen.wbt` ships TIAGo with `controllerArgs` `fetch_honey`. Settlement mode is `HOTEL_SETTLE` (`offline` default, `live`, or `none`). If the 3.10 binary is not `py -3.10`, set `HOTEL_PYTHON` to that interpreter.
@@ -81,6 +83,20 @@ python -m hotel.cli watch --once
 ```
 
 **See:** HUD claim id, real `complete` / `pay_supplier` hashes, explorer URL. Leave `INTENTS_LIVE=0` and `PEAQ_LIVE=0`. Dry extras: `python -m hotel.cli intents-quote --dry`, `python -m hotel.cli peaq-dry`.
+
+### Console lines (NEAR + peaq)
+
+After the skill, `watch --once` writes the receipt and the Webots console prints:
+
+```
+[near] claim <id> skill fetch_honey
+[near] complete <tx-or-offline> <explorer-or-empty>
+[near] pay_supplier <tx-or-offline>
+[near] courier refused <reason>
+[peaq] solana <address> near <implicit> activity <claim>
+```
+
+`HOTEL_SETTLE=offline` spawns `watch --once --offline` from the controller. `HOTEL_SETTLE=live` waits for `python -m hotel.cli watch --once` (no `--offline`) in another terminal. A real NEAR explorer hash needs `NEAR_ESCROW_ACCOUNT` set; `config/hotel.json` ships that field empty, so live `complete` cannot broadcast until that account exists. The Solana line is the same Ed25519 key as the NEAR implicit account, plus `peaq-dry` writing gitignored `settlement/peaq_status.json`. The peaq bond stays gated (`PEAQ_LIVE` unset; no `--live`).
 
 ## 1. Derive the one-key model
 
