@@ -36,6 +36,7 @@ def _did_document(robot: dict) -> Path:
 
 MACHINE_ID = "77174012743344590367033095698920089416728647386143366545675443241571867865158"
 OWNER_WALLET = "svm-owner"
+OPERATOR_WALLET = "svm-operator"
 
 
 def _activate_cmd(
@@ -45,17 +46,23 @@ def _activate_cmd(
     live: bool,
     max_in: str | None = None,
     owner_wallet: str | None = None,
+    phase: str | None = None,
 ) -> list[str]:
     pay_in = os.getenv("PEAQ_PAY_IN", "USDC")
     cmd = [exe, "activate", "--chain", "solana", "--tier", "basic", "--pay-in", pay_in]
+    if phase:
+        cmd.extend(["--phase", phase])
     if not live:
         cmd.extend(["--dry-run", "--json"])
     else:
-        if not max_in:
+        cmd.extend(["--yes", "--wait-minutes", "60"])
+        if max_in:
+            cmd.extend(["--max-in", str(max_in)])
+        elif phase in (None, "request"):
             raise SystemExit("live activation needs --max-in from peaq-dry")
-        cmd.extend(["--max-in", str(max_in), "--yes", "--wait-minutes", "60"])
         if owner_wallet:
             cmd.extend(["--owner-wallet", owner_wallet])
+        cmd.extend(["--operator-wallet", OPERATOR_WALLET])
     if robot and robot.get("solana_address") and robot.get("public_key_hex"):
         cmd.extend(
             [
@@ -157,6 +164,47 @@ def _ensure_owner_wallet(robot: dict, env: dict) -> str:
             f"imported OWS wallet Solana address {addr} does not match robot owner {robot['solana_address']}"
         )
     return OWNER_WALLET
+
+
+def _ensure_operator_wallet(env: dict) -> str:
+    """Import PEAQOS_PRIVATE_KEY as OWS EVM wallet svm-operator. Never prints the key."""
+    try:
+        from peaq_os_sdk import PeaqosClient
+        from peaq_os_sdk.constants import IMPORT_CHAIN_EVM
+    except Exception as exc:
+        raise SystemExit(f"peaq OWS SDK missing ({exc})") from exc
+    try:
+        info = PeaqosClient.get_wallet(OPERATOR_WALLET)
+        print("peaq operator", info.peaq_address)
+        return OPERATOR_WALLET
+    except Exception:
+        pass
+    key = (env.get("PEAQOS_PRIVATE_KEY") or os.getenv("PEAQOS_PRIVATE_KEY") or "").strip()
+    if not key:
+        raise SystemExit("PEAQOS_PRIVATE_KEY is empty; paste the peaq operator hex key in .env")
+    if not key.startswith("0x"):
+        key = "0x" + key
+    if not env.get("OWS_PASSPHRASE"):
+        env["OWS_PASSPHRASE"] = "hotel-local-ows"
+        os.environ["OWS_PASSPHRASE"] = env["OWS_PASSPHRASE"]
+    try:
+        from peaq_os_sdk import PeaqosClient
+        from peaq_os_sdk.constants import IMPORT_CHAIN_EVM
+    except Exception as exc:
+        raise SystemExit(f"peaq OWS SDK missing ({exc})") from exc
+    try:
+        PeaqosClient.import_wallet(
+            OPERATOR_WALLET,
+            key,
+            passphrase=env["OWS_PASSPHRASE"],
+            chain=IMPORT_CHAIN_EVM,
+        )
+    except Exception as exc:
+        if "exist" not in str(exc).lower() and "already" not in str(exc).lower():
+            raise SystemExit(f"could not import peaq operator wallet: {exc}") from exc
+    info = PeaqosClient.get_wallet(OPERATOR_WALLET)
+    print("peaq operator", info.peaq_address)
+    return OPERATOR_WALLET
 
 
 def _peaq_env() -> dict:
@@ -326,13 +374,46 @@ def peaq_live() -> dict:
     preview = _stdout_json(dry.stdout or "")
     max_in = _quote_max_in(preview)
     quote = ((preview or {}).get("observations") or {}).get("activation_quote") or {}
-    if dry.returncode != 0 or not max_in:
+    owner_wallet = _ensure_owner_wallet(robot, env)
+    _ensure_operator_wallet(env)
+    code = quote.get("error_code")
+    if code == "OPERATOR_NOT_REGISTERED":
+        print("operator not bound yet; running [1/7] registration on peaq")
+        reg = subprocess.run(
+            _activate_cmd(
+                exe, robot, live=True, owner_wallet=owner_wallet, phase="registration"
+            ),
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
+            cwd=str(ROOT),
+        )
+        if reg.returncode not in (0, 2):
+            raise SystemExit(f"operator registration failed: exit {reg.returncode}")
+        dry = subprocess.run(
+            _activate_cmd(exe, robot, live=False),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=180,
+            cwd=str(ROOT),
+            env=env,
+        )
+        preview = _stdout_json(dry.stdout or "")
+        max_in = _quote_max_in(preview)
+        quote = ((preview or {}).get("observations") or {}).get("activation_quote") or {}
+        code = quote.get("error_code")
+    if not max_in and code == "REQUEST_ALREADY_OPEN":
+        max_in = os.getenv("PEAQ_MAX_IN") or "195863"
+        print("request already open; resuming with --max-in", max_in)
+    if not max_in:
         raise SystemExit(
             "aborting live peaq: dry-run did not quote a bond. "
             f"exit={dry.returncode} quote_status={quote.get('status')} "
             f"error={quote.get('error_code') or (dry.stderr or '')[-500:]}"
         )
-    owner_wallet = _ensure_owner_wallet(robot, env)
     cmd = _activate_cmd(exe, robot, live=True, max_in=max_in, owner_wallet=owner_wallet)
     run = subprocess.run(cmd, text=True, encoding="utf-8", errors="replace", env=env, cwd=str(ROOT))
     info = {
@@ -368,7 +449,11 @@ def peaq_event(receipt_path: str) -> dict:
     dry = peaq_dry()
     preview = _stdout_json(dry.get("dry_run_stdout") or "")
     terminal = (preview or {}).get("terminal") or {}
-    if not terminal.get("machine_present") and not terminal.get("is_bonded"):
+    quote = ((preview or {}).get("observations") or {}).get("activation_quote") or {}
+    registered = bool(terminal.get("machine_present") or terminal.get("is_bonded"))
+    registered = registered or quote.get("error_code") == "MACHINE_ALREADY_ACTIVE"
+    registered = registered or "MACHINE_ALREADY_ACTIVE" in (dry.get("dry_run_stdout") or "")
+    if not registered:
         payload["submitted"] = False
         payload["submit"] = "machine is not registered yet; skipped EventRegistry"
         print(json.dumps(payload, indent=2)[:4000])
@@ -378,7 +463,8 @@ def peaq_event(receipt_path: str) -> dict:
         raise SystemExit("peaq CLI not on PATH")
     robot = load_role("robot")
     env = _peaq_env()
-    owner_wallet = _ensure_owner_wallet(robot, env)
+    _ensure_owner_wallet(robot, env)
+    env["PEAQOS_OWS_WALLET"] = OWNER_WALLET
     raw_path = SETTLEMENT_DIR / "peaq_event_raw.json"
     raw_path.write_text(json.dumps(payload["rawData"], indent=2) + "\n", encoding="utf-8")
     ts = str(int(__import__("time").time()))
@@ -400,8 +486,6 @@ def peaq_event(receipt_path: str) -> dict:
         "same",
         "--raw-data",
         str(raw_path),
-        "--owner-wallet",
-        owner_wallet,
         "--yes",
     ]
     run = subprocess.run(
