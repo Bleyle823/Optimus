@@ -28,6 +28,34 @@ License: [MIT](LICENSE).
 | `python -m hotel.cli intents-quote --dry` | 1Click quote toward USDT. No spend |
 | `python -m hotel.cli peaq-dry` | `peaqos activate --chain solana --dry-run` (no bond) |
 
+## Registered machine (peaq on Solana)
+
+TIAGo is onboarded on **peaq mainnet** with home chain **Solana** (Economics 2.0, **Basic** tier). The subscription bond is paid on Solana and booked on peaq. A second `peaqos activate` is refused (`MACHINE_ALREADY_ACTIVE`); **renew** instead. The bond is **not withdrawable**.
+
+| Field | Value |
+| --- | --- |
+| Machine ID | `77174012743344590367033095698920089416728647386143366545675443241571867865158` |
+| DID | `did:peaq:77174012743344590367033095698920089416728647386143366545675443241571867865158` |
+| Solana owner (same Ed25519 key as NEAR robot) | [`2R3A29rFMorbrhZ5bGY27ERcnttaN5xzGoAPG36cxHTr`](https://solscan.io/account/2R3A29rFMorbrhZ5bGY27ERcnttaN5xzGoAPG36cxHTr) |
+| peaq operator | [`0xd41587F9D5df02662Afa4AC60626154985E9149A`](https://peaq.subscan.io/account/0xd41587F9D5df02662Afa4AC60626154985E9149A) |
+| Pay-in | USDC on Solana (`PEAQ_PAY_IN=USDC` in `.env`) |
+
+On-chain onboarding (seven stages):
+
+| Step | Chain | Transaction |
+| --- | --- | --- |
+| `[1/7]` Operator registration | peaq | [0xb00c6c74937b27b7b87e7ec418df0b040584b8f4c8631f9a4e471e506e002cd4](https://peaq.subscan.io/tx/0xb00c6c74937b27b7b87e7ec418df0b040584b8f4c8631f9a4e471e506e002cd4) |
+| `[2/7]` Activation request | Solana | [3d54KK3ZBr4rsoiTUo4D3S7g6ymT8jWW5NpXpp65FvGo2G4BncNMEjUwegpoAA6gTkRuxywhB9mu9mEVUCLSnshs](https://solscan.io/tx/3d54KK3ZBr4rsoiTUo4D3S7g6ymT8jWW5NpXpp65FvGo2G4BncNMEjUwegpoAA6gTkRuxywhB9mu9mEVUCLSnshs) |
+| `[4/7]` Settlement | Solana | [Yo7rX4WtR6AaPTTDkb9DYXo2iRFkFrC9LtNxNSKAEmuS2Vcvu5AT53BxyaMLpveQnGY67FWecwv2HBW87dAZ5sL](https://solscan.io/tx/Yo7rX4WtR6AaPTTDkb9DYXo2iRFkFrC9LtNxNSKAEmuS2Vcvu5AT53BxyaMLpveQnGY67FWecwv2HBW87dAZ5sL) |
+| `[6/7]` Native onboarding (mint) | Solana | [5vLb29pG8fkaWcsAMoak9v569JhcszZrntnzyLnHEPTMKZxCZ4eWD5Yi9KSMhFzrnnMgR2ajE3uJUJjcBTYwK7K8](https://solscan.io/tx/5vLb29pG8fkaWcsAMoak9v569JhcszZrntnzyLnHEPTMKZxCZ4eWD5Yi9KSMhFzrnnMgR2ajE3uJUJjcBTYwK7K8) |
+| `[7/7]` Link push Solana → peaq | Solana | [4XmP3s8hmiyQwaUYAQG4FnRrsqt98pyUv7hU25AAq3SYXwgE7nV6RkDdjPMmnBJyZACjkN5wCp9HGaMii3rAHGvw](https://solscan.io/tx/4XmP3s8hmiyQwaUYAQG4FnRrsqt98pyUv7hU25AAq3SYXwgE7nV6RkDdjPMmnBJyZACjkN5wCp9HGaMii3rAHGvw) |
+
+Bond (approximate): **0.193924 USDC** used (~8.17 PEAQ bond), **0.001939 USDC** returned, **~0.0105 PEAQ** operator registration gas. `[3/7]` credit and `[5/7]` bond are driven by the Trust Validator node on peaq (no separate owner tx in the audit summary).
+
+**Activity event** for NEAR testnet **claim-3** (`fetch_honey`, trust 0, NEAR hashes in `rawData`): [3kq4G8G7wFgPWk4BeMnsUTMc5V4majisddFntapR3HR2f7gjMjYRrEHjNpqRRvkrZ1mXQxF6mcyLiDdhVzuWWYod](https://solscan.io/tx/3kq4G8G7wFgPWk4BeMnsUTMc5V4majisddFntapR3HR2f7gjMjYRrEHjNpqRRvkrZ1mXQxF6mcyLiDdhVzuWWYod) on Solana EventRegistry. Submit again with `python -m hotel.cli peaq-event --receipt settlement/receipts/claim-3.json` when `PEAQ_LIVE=1`.
+
+**NEAR testnet** settlement for the same skill (**claim-3**): [complete `CDkuc1mHHNTKAsgKEvMXkxfQ1cRyGen6oVry3AK13omn`](https://testnet.nearblocks.io/txns/CDkuc1mHHNTKAsgKEvMXkxfQ1cRyGen6oVry3AK13omn), [pay_supplier `2KsbtMBa3nwzDXNmR5GwZg9pv9LqmvSQGpsWWMtMdwxV`](https://testnet.nearblocks.io/txns/2KsbtMBa3nwzDXNmR5GwZg9pv9LqmvSQGpsWWMtMdwxV).
+
 ## Requirements
 
 - Webots R2023+ with Python **3.9** for the controller (`controllers/mission_control/runtime.ini` already pins it)
@@ -82,7 +110,7 @@ Play with `HOTEL_SKILL=fetch_honey` (or the world `controllerArgs`) and `HOTEL_S
 python -m hotel.cli watch --once
 ```
 
-**See:** HUD claim id, real `complete` / `pay_supplier` hashes, explorer URL. Leave `INTENTS_LIVE=0` and `PEAQ_LIVE=0`. Dry extras: `python -m hotel.cli intents-quote --dry`, `python -m hotel.cli peaq-dry`.
+**See:** HUD claim id, real `complete` / `pay_supplier` hashes, explorer URL. Leave `INTENTS_LIVE=0` unless you intend a mainnet fill. The peaq machine is already bonded ([Registered machine](#registered-machine-peaq-on-solana)); use `peaq-dry` to confirm status or `peaq-event` after a receipt. Dry Intents: `python -m hotel.cli intents-quote --dry`.
 
 ### Console lines (NEAR + peaq)
 
@@ -96,7 +124,7 @@ After the skill, `watch --once` writes the receipt and the Webots console prints
 [peaq] solana <address> near <implicit> activity <claim>
 ```
 
-`HOTEL_SETTLE=offline` spawns `watch --once --offline` from the controller. `HOTEL_SETTLE=live` waits for `python -m hotel.cli watch --once` (no `--offline`) in another terminal. A real NEAR explorer hash needs `NEAR_ESCROW_ACCOUNT` set; `config/hotel.json` ships that field empty, so live `complete` cannot broadcast until that account exists. The Solana line is the same Ed25519 key as the NEAR implicit account, plus `peaq-dry` writing gitignored `settlement/peaq_status.json`. The peaq bond stays gated (`PEAQ_LIVE` unset; no `--live`).
+`HOTEL_SETTLE=offline` spawns `watch --once --offline` from the controller. `HOTEL_SETTLE=live` waits for `python -m hotel.cli watch --once` (no `--offline`) in another terminal. A real NEAR explorer hash needs `NEAR_ESCROW_ACCOUNT` set; `config/hotel.json` ships that field empty, so live `complete` cannot broadcast until that account exists. The Solana line is the same Ed25519 key as the NEAR implicit account; `peaq-dry` writes gitignored `settlement/peaq_status.json` (for this repo it reports `machine_present` / `MACHINE_ALREADY_ACTIVE`).
 
 ## 1. Derive the one-key model
 
@@ -181,21 +209,23 @@ python -m hotel.cli intents-quote --dry
 
 A live fill requires `INTENTS_LIVE=1` in `.env` **and** a human confirmation prompt. Do not set that for the screening pass. Q-006: without a partner JWT the fee is 0.2%.
 
-## 7. peaq identity (dry-run, then funded only after the video)
+## 7. peaq identity (registered; dry-run for status)
+
+This machine is **already bonded** on Solana and linked to peaq. See [Registered machine (peaq on Solana)](#registered-machine-peaq-on-solana) for IDs and explorer links.
 
 ```bash
 python -m hotel.cli peaq-dry
 ```
 
-**See:** CLI version check (≥ 0.0.19) and `peaqos activate --chain solana --dry-run` quoting a bond. That quote is a **bond lock**, not the NEAR task escrow.
+**See:** CLI version check (≥ 0.0.19). For this TIAGo, dry-run should show the machine present and `MACHINE_ALREADY_ACTIVE` instead of a new activation quote. A new project would use `--dry-run` first to quote a bond (bond lock is separate from the NEAR task escrow).
 
-`--live` spends mainnet SOL/PEAQ. Do not run it until the testnet loop is recorded. Then:
+Further `peaq-live` spends mainnet bond and gas; do not run a second activation on the same machine ID.
 
 ```bash
 python -m hotel.cli peaq-event --receipt settlement/receipts/<claim>.json
 ```
 
-Skill prices in config are under the $10 revenue floor, so this submits an **activity** event only (NEAR hashes in `rawData`, trust level 0).
+Skill prices in config are under the $10 revenue floor, so this submits an **activity** event only (NEAR hashes in `rawData`, trust level 0). Example on chain: claim-3 in the registered section above.
 
 ## 8. Agent Market listing
 
