@@ -1,8 +1,20 @@
 # Hotel Robot-as-a-Service on NEAR
 
-Pay-per-skill room service in a Webots kitchen. A guest funds a **NEAR task escrow**. TIAGo fetches a jar. The robot account calls `complete`, then `pay_supplier` so the pantry machine gets the wholesale share. Intents is the USDT exit. peaq on Solana is the machine name and credit file.
+A robot that delivers drinks and food, and gets paid for each delivery. A guest funds one job in a **NEAR task escrow**. The TIAGo robot fetches the jar in a Webots kitchen. Then the robot account calls `complete`, and `pay_supplier` sends the pantry its share. There is no monthly lease.
+
+Hotels are the example. The same loop fits hospitals, warehouses, airports, and shops: pay the robot per skill, not per month.
+
+To our knowledge this is the first physical-AI machine loop on NEAR. Software agents already pay each other there. Robots are the next agents, and they need the same payment layer.
 
 Full argument: [docs/hotel-raas.md](docs/hotel-raas.md).
+
+[![TIAGo at the kitchen counter during fetch_honey](docs/media/kitchen-counter.png)](docs/media/kitchen.mp4)
+
+TIAGo in [`worlds/kitchen.wbt`](worlds/kitchen.wbt) during `fetch_honey`. The HUD shows the NEAR claim. Open the frame for the clip.
+
+| Aisle | Table |
+| --- | --- |
+| ![TIAGo between the counter and the table](docs/media/kitchen-aisle.jpg) | ![TIAGo arm over the dining table](docs/media/kitchen-table.jpg) |
 
 **Tracks:** `agents` (primary), `business`, `realworld`, `swarms`, `open`.
 
@@ -12,16 +24,82 @@ Full argument: [docs/hotel-raas.md](docs/hotel-raas.md).
 
 This repository already contained a working Webots kitchen (`worlds/kitchen.wbt`, controller `mission_control`). That world is the **baseline**. Everything under `contracts/`, `hotel/`, `config/`, and `docs/` is the hackathon settlement layer.
 
+## The opportunity
+
+Most robots are rented on a flat monthly lease, so a business pays for hours the robot sits idle. peaq's article on LG's CLOi robots puts the market at about $25 billion today and almost $70 billion by 2030. Paying per task fits that growth: the buyer pays for work done, and the machine earns for work done.
+
+## Why this matters for NEAR
+
+NEAR's own docs describe the pieces this project uses:
+
+- Agents can use NEAR to hold assets and send transactions ([Tools for AI Agents](https://docs.near.org/getting-started/tools-for-ai)).
+- Intents let a user or AI agent state the outcome it wants and have it settled ([Intents overview](https://docs.near.org/chain-abstraction/intents/overview)). Here that is the USDT exit.
+- Chain Signatures let a NEAR account control accounts on Solana and other chains. This repo uses one shared Ed25519 key today, with a chain-signature spike as the next step.
+- About 1.2 second finality and fees near $0.002 ([Why NEAR](https://docs.near.org/index#why-near)). That is what makes paying a robot for one delivery workable.
+
+What this adds: a physical agent on those rails. One escrow, one key, a machine that pays another machine. Every robot that bills per task is a new reason to hold and move value on NEAR.
+
+## The loop in one minute
+
+1. **Identity:** the robot is registered on Solana through peaq ([machine ID below](#registered-machine-peaq-on-solana)). The same key controls its NEAR account.
+2. **Fund:** the guest locks the price of `fetch_honey` in the escrow on NEAR testnet.
+3. **Deliver:** in Webots the robot drives to the counter, lines up with the jar, and picks it up.
+4. **Get paid:** the robot calls `complete`. Then `pay_supplier` sends 40 percent to the pantry that supplied the jar.
+5. **Prove it:** the receipt lists the claim ID, both transaction hashes, and a refused courier quote that was more expensive.
+
+The robot's controller never touches keys. It writes `settlement/outbox.json`, and a separate step makes the payments.
+
 License: [MIT](LICENSE).
+
+## Agent screen (no Webots, no spend)
+
+Python **3.10+**. This path does not call NEAR, Solana, or Webots.
+
+```bash
+python -m pip install -r requirements.txt
+python -m unittest tests.test_hotel -v
+python -m hotel.cli quotes
+python -m hotel.cli simulate-skill --skill fetch_honey
+python -m hotel.cli create-claim --skill fetch_honey --offline
+python -m hotel.cli watch --once --offline
+```
+
+Pass:
+
+- Four tests print `OK`.
+- `quotes` accepts `optimus2-pantry-c928.testnet` and refuses `optimus2-courier-6885.testnet`.
+- The printed receipt has `complete` / `pay_supplier` `"offline"`, `webots_success` true, and a refused courier quote.
+
+Copy `.env.example` to `.env` only if you run live commands. Never commit `.env` or `keys/`.
+
+### Optional: Webots
+
+Python **3.9** with `py_trees`, `numpy`, `scipy`. [controllers/mission_control/runtime.ini](controllers/mission_control/runtime.ini) `COMMAND` is a local 3.9 path. Point it at your 3.9 binary before Play, or the controller will not start.
+
+Open [worlds/kitchen.wbt](worlds/kitchen.wbt). Default `controllerArgs` is `all` (honey, place, jam). For the two-minute demo set `HOTEL_SKILL=fetch_honey`. `HOTEL_SETTLE` defaults to `offline`. Override with the environment or a one-line gitignored `settlement/webots.env` (`live`, `offline`, or `none`). If `hotel/` is not `py -3.10`, set `HOTEL_PYTHON`.
+
+### Optional: live NEAR, peaq, Intents
+
+Not required to pass the screen. Accounts already live in [config/hotel.json](config/hotel.json) (`optimus2-escrow-d144.testnet` and the named guest/robot/pantry/courier). Do not invent `guest.testnet`. `python -m hotel.cli prepare-claim --skill fetch_honey` is create plus fund. `watch --once` without `--offline` needs a funded claim and `keys/`. Leave `INTENTS_LIVE=0` and `PEAQ_LIVE=0`. Dry only: `python -m hotel.cli intents-quote --dry`, `python -m hotel.cli peaq-dry`. `peaq-live` is a second bond; skip it.
+
+## How judges score this
+
+| Criterion | Where it is |
+| --- | --- |
+| Technical implementation | [contracts/task_escrow](contracts/task_escrow), [tests/test_hotel.py](tests/test_hotel.py), [hotel/dispatcher.py](hotel/dispatcher.py) |
+| Design | Guest funds, robot `complete`, pantry `pay_supplier`, refused courier on the receipt |
+| Impact | Pay the delivery, not the month; the pantry is paid in the same transaction pair |
+| Originality | One Ed25519 key for NEAR settlement and the Solana peaq owner; the robot pays the pantry |
+| Sustainability | Repeatable loop is NEAR testnet + offline CLI; function-call key is the kill switch; no second peaq activation. [Limits](#limits-read-before-judging) |
 
 ## What you will see
 
 | You do | You see |
 | --- | --- |
 | `python -m hotel.cli derive-key --role robot` | One Ed25519 key, Solana address, NEAR implicit account (same 32-byte pubkey) |
-| `python -m hotel.cli quotes` | Pantry path accepted; `courier.testnet` quote refused; reason on a receipt |
-| Guest funds a claim (testnet) | `wrap.testnet` balance locked on the escrow; explorer link |
-| Open `worlds/kitchen.wbt` with `HOTEL_SKILL=fetch_honey` (or world `controllerArgs`) | TIAGo drives to the counter, grasps and lifts the honey jar; HUD shows the NEAR receipt; `settlement/outbox.json` |
+| `python -m hotel.cli quotes` | Pantry path accepted; `optimus2-courier-6885.testnet` quote refused; reason on a receipt |
+| Guest funds a claim (testnet) | `wrap.testnet` balance locked on `optimus2-escrow-d144.testnet`; explorer link |
+| Open `worlds/kitchen.wbt` (`controllerArgs` `all`, or `HOTEL_SKILL=fetch_honey`) | TIAGo drives to the counter, grasps and lifts the honey jar; HUD shows the NEAR receipt; `settlement/outbox.json` |
 | Dispatcher watches the outbox | Robot `complete` tx, robot balance up |
 | Same key `pay_supplier` | Pantry balance up; robot keeps the spread (pantry_bps in config) |
 | Print receipt | Claim id, both tx hashes, refused courier quote, Webots success |
@@ -62,14 +140,13 @@ Full committed audit trail (peaq, Intents bridge, all claims): [docs/on-chain-re
 
 ## Requirements
 
-- Webots R2023+ with Python **3.9** for the controller (`controllers/mission_control/runtime.ini` already pins it)
-- Python **3.10+** for `hotel/` (NEAR RPC, 1Click, peaq dry-run)
-- `pip install -r requirements.txt`
-- Optional: Rust + `cargo` to build [`contracts/task_escrow`](contracts/task_escrow)
-- Optional: `peaq-os-cli[solana,ows]` **0.0.19+** for the identity dry-run
-- Optional: NEAR testnet named accounts (`tiago.testnet`, `pantry.testnet`, `guest.testnet`, `courier.testnet`) and a small `wrap.testnet` balance
+- Python **3.10+** for `hotel/` and `python -m unittest tests.test_hotel -v` (`pip install -r requirements.txt`)
+- Webots R2023+ is optional. Controller Python **3.9** with `py_trees`, `numpy`, `scipy`. Edit `COMMAND` in [controllers/mission_control/runtime.ini](controllers/mission_control/runtime.ini) to your 3.9 binary
+- Optional: Rust + `cargo` to rebuild [`contracts/task_escrow`](contracts/task_escrow)
+- Optional: `peaq-os-cli[solana,ows]` **0.0.19+** for `peaq-dry`
+- Optional live: keys under `keys/` for the named accounts already in [config/hotel.json](config/hotel.json)
 
-Copy `.env.example` to `.env`. Never commit keys. `keys/` is gitignored.
+Copy `.env.example` to `.env` for live runs. Never commit keys. `keys/` is gitignored.
 
 ## Run end-to-end (Webots + settlement)
 
@@ -77,7 +154,7 @@ Operator walkthrough (NEAR, Solana machine registration, Intents, where to follo
 
 Webots uses Python **3.9** (`controllers/mission_control/runtime.ini`). `hotel/` needs Python **3.10+**. The controller never imports `hotel`; it writes `settlement/outbox.json` and overlays the receipt with `Supervisor.setLabel`.
 
-`worlds/kitchen.wbt` ships TIAGo with `controllerArgs` `fetch_honey`. Settlement mode is `HOTEL_SETTLE` (`offline` default, `live`, or `none`). If the 3.10 binary is not `py -3.10`, set `HOTEL_PYTHON` to that interpreter.
+`worlds/kitchen.wbt` ships TIAGo with `controllerArgs` `all`. Settlement mode is `HOTEL_SETTLE` (`offline` default, `live`, or `none`), from the environment or gitignored `settlement/webots.env`. If the 3.10 binary is not `py -3.10`, set `HOTEL_PYTHON` to that interpreter.
 
 ### A. Offline (no testnet; proves drive + HUD)
 
@@ -87,28 +164,26 @@ Webots uses Python **3.9** (`controllers/mission_control/runtime.ini`). `hotel/`
 4. In Webots: **File → Reload World**, then Play. Optional env: `HOTEL_SETTLE=offline`.
 5. **See:** TIAGo starts at `(0, 0.25)` (the reference kitchen pose), follows the mapped path, grasps the honey jar, then a HUD: claim id, `complete` / `pay_supplier` `offline`, refused courier quote.
 
-### B. Live NEAR testnet (fill these; do not invent accounts)
+### B. Live NEAR testnet (do not invent accounts)
 
-Copy `.env.example` to `.env`. Paste values you control:
+[config/hotel.json](config/hotel.json) already names the contract and roles. Copy `.env.example` to `.env` and point key files at `keys/` for those same accounts.
 
 | Field | Where | What you put |
 | --- | --- | --- |
-| `NEAR_ESCROW_ACCOUNT` | `.env` and `config/hotel.json` `escrow_account` | Named testnet account that will hold the wasm |
-| `NEAR_GUEST_ACCOUNT` / `NEAR_ROBOT_ACCOUNT` / `NEAR_PANTRY_ACCOUNT` / `NEAR_COURIER_ACCOUNT` | `.env` (defaults `guest.testnet`, `tiago.testnet`, `pantry.testnet`, `courier.testnet`) | Accounts you created; full-access keys for guest/robot/pantry |
+| `NEAR_ESCROW_ACCOUNT` | `.env` (overrides config) | `optimus2-escrow-d144.testnet` unless you deployed your own wasm |
+| Guest / robot / pantry / courier | `config/hotel.json` `accounts` | `optimus2-guest-d144.testnet`, `optimus2-tiago-f63d.testnet`, `optimus2-pantry-c928.testnet`, `optimus2-courier-6885.testnet` |
 | `NEAR_FT_CONTRACT` | `.env` | `wrap.testnet` |
 | `ROBOT_KEYFILE` / `GUEST_KEYFILE` / `PANTRY_KEYFILE` | `.env` | `keys/robot.json` (and guest/pantry) from `derive-key` |
 | wrap.testnet balance | guest account | Enough for `fetch_honey` (`price_yocto` `5e22` in config) |
-| wasm | `contracts/task_escrow` | `cargo build --target wasm32-unknown-unknown --release` then `python -m hotel.cli deploy-escrow --wasm ...` and `init-escrow` |
-| function-call key | robot | `python -m hotel.cli add-function-call-key` after `escrow_account` is set |
+| function-call key | robot | `python -m hotel.cli add-function-call-key` if the robot still holds only a full-access key |
 
 Then:
 
 ```bash
-python -m hotel.cli create-claim --skill fetch_honey
-python -m hotel.cli fund-claim --claim <id>
+python -m hotel.cli prepare-claim --skill fetch_honey
 ```
 
-Play with `HOTEL_SKILL=fetch_honey` (or the world `controllerArgs`) and `HOTEL_SETTLE=live`. In another terminal:
+(or `create-claim` then `fund-claim --claim <id>`). Play with `HOTEL_SKILL=fetch_honey` (world default is `all`) and `HOTEL_SETTLE=live`. In another terminal:
 
 ```bash
 python -m hotel.cli watch --once
@@ -128,7 +203,7 @@ After the skill, `watch --once` writes the receipt and the Webots console prints
 [peaq] solana <address> near <implicit> activity <claim>
 ```
 
-`HOTEL_SETTLE=offline` spawns `watch --once --offline` from the controller. `HOTEL_SETTLE=live` waits for `python -m hotel.cli watch --once` (no `--offline`) in another terminal. A real NEAR explorer hash needs `NEAR_ESCROW_ACCOUNT` set; `config/hotel.json` ships that field empty, so live `complete` cannot broadcast until that account exists. The Solana line is the same Ed25519 key as the NEAR implicit account; `peaq-dry` writes gitignored `settlement/peaq_status.json` (for this repo it reports `machine_present` / `MACHINE_ALREADY_ACTIVE`).
+`HOTEL_SETTLE=offline` spawns `watch --once --offline` from the controller. `HOTEL_SETTLE=live` waits for `python -m hotel.cli watch --once` (no `--offline`) in another terminal. A real explorer hash needs `keys/` for the accounts in config and a funded claim. An empty `NEAR_ESCROW_ACCOUNT` in `.env` does not wipe the escrow already in `config/hotel.json`. The Solana line is the same Ed25519 key as the NEAR implicit account; `peaq-dry` writes gitignored `settlement/peaq_status.json` (for this repo it reports `machine_present` / `MACHINE_ALREADY_ACTIVE`).
 
 ## 1. Derive the one-key model
 
@@ -161,14 +236,15 @@ python -m hotel.cli deploy-escrow --wasm target/wasm32-unknown-unknown/release/t
 python -m hotel.cli init-escrow
 ```
 
-Paste the contract account into `config/hotel.json` (`escrow_account`) and `.env`. The named account must already exist on testnet with a key you control.
+This repo already points `escrow_account` at `optimus2-escrow-d144.testnet`. Rebuild and `deploy-escrow` only if you are replacing that wasm. The named account must exist on testnet with a key you control.
 
 ## 3. Fund one skill (do X, see Y)
 
 ```bash
-python -m hotel.cli create-claim --skill fetch_honey
-python -m hotel.cli fund-claim --claim <id>
+python -m hotel.cli prepare-claim --skill fetch_honey
 ```
+
+Same as `create-claim` then `fund-claim --claim <id>`.
 
 **See:** explorer link for `ft_transfer_call`; claim status `Funded`.
 
@@ -176,13 +252,13 @@ If `procurement.kill_switch` is true in config, both commands refuse to run.
 
 ## 4. Run the skill in Webots
 
-The world already passes `controllerArgs` `fetch_honey`. Override with `HOTEL_SKILL` in the controller environment if needed. Open `worlds/kitchen.wbt`, play.
+The world passes `controllerArgs` `all` (honey, place, jam). For one skill set `HOTEL_SKILL=fetch_honey`. Open `worlds/kitchen.wbt`, play. The pre-hackathon behaviour tree is the **baseline** in git history; the shipping world is the settlement overlay on that kitchen.
 
 **See:** TIAGo follows the reference kitchen path, grasps `honey jar`, lifts it, writes `settlement/outbox.json`, then overlays claim / tx lines (unless `HOTEL_SETTLE=none`).
 
-Clear `controllerArgs` and leave `HOTEL_SKILL` unset to run the original full tree (baseline).
-
 ## 5. Machine-to-machine settlement
+
+Prepare a funded claim with `python -m hotel.cli prepare-claim --skill fetch_honey` (or the offline commands below), then:
 
 ```bash
 python -m hotel.cli watch --once

@@ -37,9 +37,9 @@ NEAR holds the **task escrow**: guest money for one skill.
 2. Guest funds with `wrap.testnet` (`ft_transfer_call`). `fetch_honey` is `5e22` yocto in [config/hotel.json](../config/hotel.json).
 3. Webots runs the skill and writes GPS, compass, success, and a telemetry hash to the outbox.
 4. `python -m hotel.cli watch --once` (live) or `--offline` reads the outbox. The robot calls `complete` (payout to the robot), then `pay_supplier` (pantry share; robot keeps the spread).
-5. The dispatcher **refuses** `courier.testnet` (price above max). That refusal is stored on the receipt. The courier is never paid.
+5. The dispatcher **refuses** `optimus2-courier-6885.testnet` (price above max). That refusal is stored on the receipt. The courier is never paid.
 
-Live broadcast needs `NEAR_ESCROW_ACCOUNT` in `.env` and `escrow_account` in config. Both ship **empty**. Until you paste a real testnet contract account, `create-claim` without `--offline` still writes an offline claim and `watch --once` cannot put a real hash on the HUD.
+Live broadcast uses `escrow_account` in [config/hotel.json](../config/hotel.json) (`optimus2-escrow-d144.testnet`). `NEAR_ESCROW_ACCOUNT` in `.env` overrides that field when set. A missing key file or an unfunded guest account is what blocks a real hash on the HUD, not an empty config field.
 
 **Follow a NEAR payment**
 
@@ -168,7 +168,7 @@ A live fill requires `INTENTS_LIVE=1` **and** typing YES on `python -m hotel.cli
 
 | Missing | What you get instead |
 | --- | --- |
-| `NEAR_ESCROW_ACCOUNT` | Offline claims only; no NearBlocks hash |
+| `keys/` for guest/robot | Live `create-claim` / `watch` cannot sign; no NearBlocks hash |
 | Guest wrap.testnet balance | `fund-claim` fails |
 | Escrow wasm not deployed / not `init`-ed | Live `create_claim` fails |
 | Function-call key not added | Live `complete` / `pay_supplier` cannot use the limited key |
