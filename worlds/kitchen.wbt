@@ -5802,3 +5802,9 @@ DEF marker PingPongBall {
   name "marker"
 }
 
+Robot {
+  translation 0 0 -10
+  name "mcp_bridge"
+  controller "mcp_bridge"
+  supervisor TRUE
+}
