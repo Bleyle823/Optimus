@@ -52,17 +52,31 @@ def import_wallet_private_key(
     data = _load()
     if name in data["wallets"]:
         raise RuntimeError(f"wallet {name} already exists")
+    kind = chain or "solana"
     accounts = []
-    if (chain or "solana") == "solana":
+    if kind == "solana":
         accounts.append(_solana_account(hex_key))
-    accounts.append(
-        {
-            "account_id": "eip155:3338:0x0000000000000000000000000000000000000000",
-            "address": "0x0000000000000000000000000000000000000000",
-            "chain_id": "eip155:3338",
-            "derivation_path": "m/44'/60'/0'/0/0",
-        }
-    )
+        dummy = "0x0000000000000000000000000000000000000000"
+        accounts.append(
+            {
+                "account_id": f"eip155:3338:{dummy}",
+                "address": dummy,
+                "chain_id": "eip155:3338",
+                "derivation_path": "m/44'/60'/0'/0/0",
+            }
+        )
+    else:
+        from eth_account import Account
+
+        addr = Account.from_key("0x" + hex_key[:64]).address
+        accounts.append(
+            {
+                "account_id": f"eip155:3338:{addr}",
+                "address": addr,
+                "chain_id": "eip155:3338",
+                "derivation_path": "m/44'/60'/0'/0/0",
+            }
+        )
     rec = {
         "id": str(uuid.uuid4()),
         "name": name,
@@ -133,15 +147,31 @@ def sign_transaction(
     index: int | None = None,
     vault_path_opt: str | None = None,
 ) -> dict:
-    _ = chain, passphrase, index, vault_path_opt
+    _ = passphrase, index, vault_path_opt
     raw = bytes.fromhex(tx_hex.removeprefix("0x"))
+    if str(chain).startswith("eip155") or str(chain).startswith("peaq"):
+        from eth_account import Account
+        from eth_hash.auto import keccak
+
+        signed = Account.from_key(_seed(wallet)).unsafe_sign_hash(keccak(raw))
+        rec = signed.v
+        if rec in (27, 28):
+            rec -= 27
+        elif rec > 28:
+            rec = (rec - 35) % 2
+        return {
+            "signature": "0x" + signed.r.to_bytes(32, "big").hex() + signed.s.to_bytes(32, "big").hex(),
+            "recovery_id": rec,
+        }
     from solders.keypair import Keypair
+    from solders.message import to_bytes_versioned
     from solders.transaction import VersionedTransaction
 
     sk = SigningKey(_seed(wallet))
     kp = Keypair.from_bytes(bytes(sk) + bytes(sk.verify_key))
     vtx = VersionedTransaction.from_bytes(raw)
-    sig = kp.sign_message(bytes(vtx.message))
+    # Fixed: sign the versioned message bytes Solana expects, not the raw message struct.
+    sig = kp.sign_message(to_bytes_versioned(vtx.message))
     return {"signature": "0x" + bytes(sig).hex()}
 
 

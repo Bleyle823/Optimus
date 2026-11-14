@@ -21,6 +21,8 @@ settlement/peaq_event_raw.json
 settlement/svm-owner.key
 settlement/ows_vault.json
 settlement/receipts/*.json
+peaqos.log
+onboarding-*.json
 !settlement/receipts/.gitkeep
 controllers/mission_control/__pycache__/
 .idea/
