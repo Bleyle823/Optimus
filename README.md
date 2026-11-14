@@ -56,6 +56,10 @@ Bond (approximate): **0.193924 USDC** used (~8.17 PEAQ bond), **0.001939 USDC** 
 
 **NEAR testnet** settlement for the same skill (**claim-3**): [complete `CDkuc1mHHNTKAsgKEvMXkxfQ1cRyGen6oVry3AK13omn`](https://testnet.nearblocks.io/txns/CDkuc1mHHNTKAsgKEvMXkxfQ1cRyGen6oVry3AK13omn), [pay_supplier `2KsbtMBa3nwzDXNmR5GwZg9pv9LqmvSQGpsWWMtMdwxV`](https://testnet.nearblocks.io/txns/2KsbtMBa3nwzDXNmR5GwZg9pv9LqmvSQGpsWWMtMdwxV).
 
+**Latest live kitchen claim (claim-4):** [create](https://testnet.nearblocks.io/txns/5BKPQXgq8bWjdS8JU8iQEKcEE4xgtedE5PHcfPH1rWzA), [fund](https://testnet.nearblocks.io/txns/Dijs8gk1qYcXJMv4ReDACFSXTkAaQAgWzUDkrMKNqoES), [complete](https://testnet.nearblocks.io/txns/GtifFSDD78BpZ29SAnEetLjQPuXf56pYaxRAjx4iSA9W), [pay_supplier](https://testnet.nearblocks.io/txns/43VE9E9VFR7BZ8TyxDCbgJi12oBKrHPN6y5mNe6DvbFD).
+
+Full committed audit trail (peaq, Intents bridge, all claims): [docs/on-chain-record.md](docs/on-chain-record.md).
+
 ## Requirements
 
 - Webots R2023+ with Python **3.9** for the controller (`controllers/mission_control/runtime.ini` already pins it)

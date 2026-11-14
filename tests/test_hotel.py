@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from hotel.dispatcher import quotes, simulate_skill, settle_outbox, create_claim
+from hotel.dispatcher import quotes, simulate_skill, settle_outbox, create_claim, _open_claim_for_skill
 from hotel.keys import derive
 from hotel.agent_market import receipt_markdown
 from hotel.config import PEAQ_STATUS, RECEIPTS_DIR, load
@@ -52,6 +52,14 @@ class HotelRaaSTests(unittest.TestCase):
         md = receipt_markdown(receipt)
         self.assertIn(receipt["claim_id"], md)
         self.assertIn("fetch_honey", md)
+
+    def test_open_claim_matches_skill_not_latest_file(self):
+        honey = create_claim("fetch_honey", offline=True)
+        jam = create_claim("fetch_jam", offline=True)
+        claim_id, stored = _open_claim_for_skill("fetch_jam")
+        self.assertEqual(claim_id, jam["claim_id"])
+        self.assertNotEqual(claim_id, honey["claim_id"])
+        self.assertEqual((stored.get("args") or {}).get("skill_id"), "fetch_jam")
 
 
 if __name__ == "__main__":

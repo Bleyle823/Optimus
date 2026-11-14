@@ -231,7 +231,8 @@ class grab_item(Behaviour):
     def update(self):
         
         feedback_left = self.gripper_left.getForceFeedback()
-        feedback_right = self.gripper_left.getForceFeedback()
+        # Fixed: the right finger used the left motor's force feedback.
+        feedback_right = self.gripper_right.getForceFeedback()
         
         total_feedback = feedback_left + feedback_right
         
