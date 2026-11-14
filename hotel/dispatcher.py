@@ -257,6 +257,37 @@ def read_outbox() -> dict | None:
     return json.loads(OUTBOX.read_text(encoding="utf-8"))
 
 
+def _claim_settled(stored: dict) -> bool:
+    complete = stored.get("complete")
+    if stored.get("settled_at"):
+        return True
+    if isinstance(complete, dict) and (
+        complete.get("tx") or complete.get("complete") == "offline" or complete.get("telemetry_hash")
+    ):
+        return True
+    return False
+
+
+def _open_claim_for_skill(skill_id: str) -> tuple[str | None, dict]:
+    claim_files = sorted(RECEIPTS_DIR.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    for path in claim_files:
+        try:
+            stored = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(stored, dict):
+            continue
+        args_skill = (stored.get("args") or {}).get("skill_id") or stored.get("skill_id")
+        if args_skill != skill_id:
+            continue
+        if _claim_settled(stored):
+            continue
+        claim_id = stored.get("claim_id")
+        if claim_id:
+            return claim_id, stored
+    return None, {}
+
+
 def settle_outbox(once: bool = True, offline: bool = False) -> dict | None:
     cfg = load()
     q = quotes(cfg)
@@ -264,14 +295,8 @@ def settle_outbox(once: bool = True, offline: bool = False) -> dict | None:
     while True:
         box = read_outbox()
         if box and box.get("skill_id"):
-            claim_files = sorted(RECEIPTS_DIR.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
-            claim_id = None
-            stored = {}
-            for path in claim_files:
-                stored = json.loads(path.read_text())
-                if stored.get("args", {}).get("skill_id") == box["skill_id"] or stored.get("claim_id"):
-                    claim_id = stored.get("claim_id")
-                    break
+            # Fixed: settle the open receipt for this skill, not the newest file.
+            claim_id, stored = _open_claim_for_skill(box["skill_id"])
             if not claim_id:
                 raise SystemExit("no claim receipt for this skill; run create-claim / fund-claim first")
             tel = box.get("telemetry_hash")
