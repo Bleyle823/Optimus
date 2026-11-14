@@ -6,11 +6,71 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from hotel.config import PEAQ_STATUS, RECEIPTS_DIR, ROOT, SETTLEMENT_DIR
+from hotel.config import PEAQ_STATUS, RECEIPTS_DIR, ROOT, SETTLEMENT_DIR, load
 from hotel.keys import load_role
 
 
 MIN_CLI = (0, 0, 19)
+WIN_SHIM = Path(__file__).resolve().parent / "winshim"
+
+
+def _did_document(robot: dict) -> Path:
+    """Public DID. The machine id is machine type plus this key, and it cannot change later."""
+    cfg = load()
+    doc = {
+        "verificationMethods": [],
+        "authentication": [],
+        "serviceEndpoints": [
+            {
+                "id": "near-robot",
+                "serviceType": "NEAR",
+                "serviceEndpoint": cfg["accounts"]["robot"],
+            }
+        ],
+    }
+    SETTLEMENT_DIR.mkdir(parents=True, exist_ok=True)
+    path = SETTLEMENT_DIR / "peaq_did.json"
+    path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _activate_cmd(exe: str, robot: dict | None, *, live: bool) -> list[str]:
+    cmd = [exe, "activate", "--chain", "solana", "--tier", "basic"]
+    if not live:
+        cmd.append("--dry-run")
+    if robot and robot.get("solana_address") and robot.get("public_key_hex"):
+        cmd.extend(
+            [
+                "--solana-owner",
+                robot["solana_address"],
+                "--manufacturer",
+                robot["solana_address"],
+                "--machine-type",
+                "hotel-robot",
+                "--credential-subject-hex",
+                "0x" + robot["public_key_hex"],
+                "--did-document",
+                str(_did_document(robot)),
+                "--max-native-fee-lamports",
+                "5000000",
+                "--max-native-rent-lamports",
+                "20000000",
+            ]
+        )
+    return cmd
+
+
+def _peaq_env() -> dict:
+    """Fixed: let peaqos import on Windows. The SDK imports Unix-only pwd at startup."""
+    env = os.environ.copy()
+    if not env.get("PEAQOS_SVM_RPC_URL") and env.get("SOLANA_RPC"):
+        env["PEAQOS_SVM_RPC_URL"] = env["SOLANA_RPC"]
+    env.setdefault("PEAQOS_RPC_URL", "https://peaq.api.onfinality.io/public")
+    if os.name != "nt":
+        return env
+    prev = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(WIN_SHIM) if not prev else str(WIN_SHIM) + os.pathsep + prev
+    return env
 
 
 def _parse_version(text: str) -> tuple[int, int, int] | None:
@@ -35,7 +95,7 @@ def peaq_dry() -> dict:
         "solana_owner": robot["solana_address"] if robot else None,
         "near_implicit": robot["near_implicit"] if robot else None,
         "home_chain": 5,
-        "command": "peaqos activate --chain solana --dry-run",
+        "command": "peaqos activate --chain solana --tier basic --dry-run",
         "live_cost": "about 0.015 SOL on the owner, quoted bond, ~0.05 PEAQ on operator wallet",
         "live_gated": "PEAQ_LIVE=1 after the testnet loop is on camera",
     }
@@ -46,7 +106,7 @@ def peaq_dry() -> dict:
         print("Install: pip install 'peaq-os-cli[solana,ows]>=0.0.19'  (Python 3.10+)")
         return info
     try:
-        ver = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=20)
+        ver = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=20, env=_peaq_env())
         parsed = _parse_version(ver.stdout + ver.stderr)
         info["version_output"] = (ver.stdout + ver.stderr).strip()
         info["version"] = None if not parsed else ".".join(map(str, parsed))
@@ -57,9 +117,9 @@ def peaq_dry() -> dict:
             return info
     except Exception as e:
         info["version_error"] = str(e)
-    cmd = [exe, "activate", "--chain", "solana", "--dry-run"]
+    cmd = _activate_cmd(exe, robot, live=False)
     try:
-        run = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=str(ROOT))
+        run = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=str(ROOT), env=_peaq_env())
         info["dry_run_exit"] = run.returncode
         info["dry_run_stdout"] = (run.stdout or "")[-4000:]
         info["dry_run_stderr"] = (run.stderr or "")[-4000:]
@@ -81,7 +141,7 @@ def write_peaq_status(info: dict) -> dict:
         "status": info.get("status"),
         "home_chain": 5,
         "live": False,
-        "command": "peaqos activate --chain solana --dry-run",
+        "command": "peaqos activate --chain solana --tier basic --dry-run",
         "note": info.get("note"),
     }
     SETTLEMENT_DIR.mkdir(parents=True, exist_ok=True)
@@ -136,7 +196,12 @@ def peaq_live() -> dict:
     exe = shutil.which("peaqos") or shutil.which("peaq-os") or shutil.which("peaq-os-cli")
     if not exe:
         raise SystemExit("peaq CLI not on PATH")
-    run = subprocess.run([exe, "activate", "--chain", "solana"], text=True)
+    robot = None
+    try:
+        robot = load_role("robot")
+    except FileNotFoundError:
+        pass
+    run = subprocess.run(_activate_cmd(exe, robot, live=True), text=True, env=_peaq_env())
     return {"exit": run.returncode}
 
 
