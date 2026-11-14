@@ -34,10 +34,28 @@ def _did_document(robot: dict) -> Path:
     return path
 
 
-def _activate_cmd(exe: str, robot: dict | None, *, live: bool) -> list[str]:
-    cmd = [exe, "activate", "--chain", "solana", "--tier", "basic"]
+MACHINE_ID = "77174012743344590367033095698920089416728647386143366545675443241571867865158"
+OWNER_WALLET = "svm-owner"
+
+
+def _activate_cmd(
+    exe: str,
+    robot: dict | None,
+    *,
+    live: bool,
+    max_in: str | None = None,
+    owner_wallet: str | None = None,
+) -> list[str]:
+    pay_in = os.getenv("PEAQ_PAY_IN", "USDC")
+    cmd = [exe, "activate", "--chain", "solana", "--tier", "basic", "--pay-in", pay_in]
     if not live:
-        cmd.append("--dry-run")
+        cmd.extend(["--dry-run", "--json"])
+    else:
+        if not max_in:
+            raise SystemExit("live activation needs --max-in from peaq-dry")
+        cmd.extend(["--max-in", str(max_in), "--yes", "--wait-minutes", "60"])
+        if owner_wallet:
+            cmd.extend(["--owner-wallet", owner_wallet])
     if robot and robot.get("solana_address") and robot.get("public_key_hex"):
         cmd.extend(
             [
@@ -60,16 +78,103 @@ def _activate_cmd(exe: str, robot: dict | None, *, live: bool) -> list[str]:
     return cmd
 
 
+def _stdout_json(text: str) -> dict | None:
+    start = (text or "").find("{")
+    if start < 0:
+        return None
+    try:
+        return json.loads(text[start:])
+    except json.JSONDecodeError:
+        return None
+
+
+def _quote_max_in(preview: dict | None) -> str | None:
+    if not preview:
+        return None
+    obs = preview.get("observations") or {}
+    quote = obs.get("activation_quote") or {}
+    if quote.get("status") == "refused" or quote.get("error_code") == "INSUFFICIENT_BALANCE":
+        return None
+    for key in ("suggested_max_in", "max_in", "suggestedMaxIn"):
+        if quote.get(key):
+            return str(quote[key])
+    terminal = preview.get("terminal") or {}
+    for blob in (quote, preview.get("accepted_limits") or {}, terminal):
+        for key in ("suggested_max_in", "max_in", "bond", "bond_amount"):
+            if blob.get(key):
+                return str(blob[key])
+    return None
+
+
+def _ensure_owner_wallet(robot: dict, env: dict) -> str:
+    """Import the robot Ed25519 seed as OWS Solana wallet svm-owner. Never prints the seed."""
+    if not env.get("OWS_PASSPHRASE"):
+        env["OWS_PASSPHRASE"] = "hotel-local-ows"
+        os.environ["OWS_PASSPHRASE"] = env["OWS_PASSPHRASE"]
+    seed_hex = robot["secret_key_hex"][:64]
+    private_key = "0x" + seed_hex
+    try:
+        from peaq_os_sdk import PeaqosClient
+        from peaq_os_sdk.constants import IMPORT_CHAIN_SOLANA
+    except Exception as exc:
+        raise SystemExit(f"peaq OWS SDK missing ({exc}); pip install 'peaq_os_sdk[ows]'") from exc
+    try:
+        info = PeaqosClient.import_wallet(
+            OWNER_WALLET,
+            private_key,
+            passphrase=env["OWS_PASSPHRASE"],
+            chain=IMPORT_CHAIN_SOLANA,
+        )
+    except Exception as exc:
+        msg = str(exc).lower()
+        if "exist" not in msg and "already" not in msg:
+            raise SystemExit(f"could not import Solana owner wallet: {exc}") from exc
+        info = None
+        try:
+            listed = PeaqosClient.list_wallets()
+            for w in listed or []:
+                name = getattr(w, "name", None) or (w.get("name") if isinstance(w, dict) else None)
+                if name == OWNER_WALLET:
+                    info = w
+                    break
+        except Exception:
+            info = None
+    addr = None
+    if info is not None:
+        addr = getattr(info, "solana_address", None) or getattr(info, "address", None)
+        if isinstance(info, dict):
+            addr = info.get("solana_address") or info.get("address")
+        accounts = getattr(info, "accounts", None)
+        if not addr and accounts:
+            for acct in accounts:
+                a = getattr(acct, "address", None) or (acct.get("address") if isinstance(acct, dict) else None)
+                net = getattr(acct, "network", None) or (acct.get("network") if isinstance(acct, dict) else "")
+                if a and "solana" in str(net).lower():
+                    addr = a
+                    break
+    if addr and addr != robot["solana_address"]:
+        raise SystemExit(
+            f"imported OWS wallet Solana address {addr} does not match robot owner {robot['solana_address']}"
+        )
+    return OWNER_WALLET
+
+
 def _peaq_env() -> dict:
-    """Fixed: let peaqos import on Windows. The SDK imports Unix-only pwd at startup."""
+    """Fixed: let peaqos import on Windows (pwd and OWS shims under hotel/winshim)."""
+    load()
+    import sys
+
+    shim = str(WIN_SHIM)
+    if shim not in sys.path:
+        sys.path.insert(0, shim)
     env = os.environ.copy()
     if not env.get("PEAQOS_SVM_RPC_URL") and env.get("SOLANA_RPC"):
         env["PEAQOS_SVM_RPC_URL"] = env["SOLANA_RPC"]
     env.setdefault("PEAQOS_RPC_URL", "https://peaq.api.onfinality.io/public")
-    if os.name != "nt":
-        return env
+    env.setdefault("PEAQOS_NETWORK", "peaq")
+    env.setdefault("OWS_PASSPHRASE", "hotel-local-ows")
     prev = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = str(WIN_SHIM) if not prev else str(WIN_SHIM) + os.pathsep + prev
+    env["PYTHONPATH"] = shim if not prev else shim + os.pathsep + prev
     return env
 
 
@@ -119,7 +224,16 @@ def peaq_dry() -> dict:
         info["version_error"] = str(e)
     cmd = _activate_cmd(exe, robot, live=False)
     try:
-        run = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=str(ROOT), env=_peaq_env())
+        run = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=120,
+            cwd=str(ROOT),
+            env=_peaq_env(),
+        )
         info["dry_run_exit"] = run.returncode
         info["dry_run_stdout"] = (run.stdout or "")[-4000:]
         info["dry_run_stderr"] = (run.stderr or "")[-4000:]
@@ -190,29 +304,121 @@ def attach_peaq(receipt: dict) -> dict:
 def peaq_live() -> dict:
     from hotel.near_rpc import confirm_mainnet
 
+    load()
     if os.getenv("PEAQ_LIVE") != "1":
         raise SystemExit("refusing funded activation: set PEAQ_LIVE=1 after the testnet loop is filmed")
     confirm_mainnet("activate a peaq machine on Solana mainnet (bond is not withdrawable)")
     exe = shutil.which("peaqos") or shutil.which("peaq-os") or shutil.which("peaq-os-cli")
     if not exe:
         raise SystemExit("peaq CLI not on PATH")
-    robot = None
-    try:
-        robot = load_role("robot")
-    except FileNotFoundError:
-        pass
-    run = subprocess.run(_activate_cmd(exe, robot, live=True), text=True, env=_peaq_env())
-    return {"exit": run.returncode}
+    robot = load_role("robot")
+    env = _peaq_env()
+    dry = subprocess.run(
+        _activate_cmd(exe, robot, live=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=180,
+        cwd=str(ROOT),
+        env=env,
+    )
+    preview = _stdout_json(dry.stdout or "")
+    max_in = _quote_max_in(preview)
+    quote = ((preview or {}).get("observations") or {}).get("activation_quote") or {}
+    if dry.returncode != 0 or not max_in:
+        raise SystemExit(
+            "aborting live peaq: dry-run did not quote a bond. "
+            f"exit={dry.returncode} quote_status={quote.get('status')} "
+            f"error={quote.get('error_code') or (dry.stderr or '')[-500:]}"
+        )
+    owner_wallet = _ensure_owner_wallet(robot, env)
+    cmd = _activate_cmd(exe, robot, live=True, max_in=max_in, owner_wallet=owner_wallet)
+    run = subprocess.run(cmd, text=True, encoding="utf-8", errors="replace", env=env, cwd=str(ROOT))
+    info = {
+        "exit": run.returncode,
+        "max_in": max_in,
+        "owner_wallet": owner_wallet,
+        "solana_owner": robot["solana_address"],
+        "machine_id": MACHINE_ID,
+    }
+    write_peaq_status(
+        {
+            **info,
+            "solana_owner": robot["solana_address"],
+            "near_implicit": robot["near_implicit"],
+            "status": "live_ok" if run.returncode == 0 else "live_failed",
+            "version": None,
+            "note": "live activation attempted",
+        }
+    )
+    return info
 
 
 def peaq_event(receipt_path: str) -> dict:
-    """Activity event payload. Does not submit until PEAQ_LIVE=1."""
+    """Activity event. Submits on Solana EventRegistry only when PEAQ_LIVE=1."""
     path = Path(receipt_path)
     if not path.exists():
         path = RECEIPTS_DIR / receipt_path
     receipt = json.loads(path.read_text(encoding="utf-8"))
     payload = activity_payload(receipt)
-    if os.getenv("PEAQ_LIVE") == "1":
-        payload["submit"] = "caller must use peaq EventRegistry with the owner key; not auto-broadcast here"
-    print(json.dumps(payload, indent=2))
+    if os.getenv("PEAQ_LIVE") != "1":
+        print(json.dumps(payload, indent=2))
+        return payload
+    dry = peaq_dry()
+    preview = _stdout_json(dry.get("dry_run_stdout") or "")
+    terminal = (preview or {}).get("terminal") or {}
+    if not terminal.get("machine_present") and not terminal.get("is_bonded"):
+        payload["submitted"] = False
+        payload["submit"] = "machine is not registered yet; skipped EventRegistry"
+        print(json.dumps(payload, indent=2)[:4000])
+        return payload
+    exe = shutil.which("peaqos") or shutil.which("peaq-os") or shutil.which("peaq-os-cli")
+    if not exe:
+        raise SystemExit("peaq CLI not on PATH")
+    robot = load_role("robot")
+    env = _peaq_env()
+    owner_wallet = _ensure_owner_wallet(robot, env)
+    raw_path = SETTLEMENT_DIR / "peaq_event_raw.json"
+    raw_path.write_text(json.dumps(payload["rawData"], indent=2) + "\n", encoding="utf-8")
+    ts = str(int(__import__("time").time()))
+    cmd = [
+        exe,
+        "qualify",
+        "event",
+        "--machine-id",
+        MACHINE_ID,
+        "--type",
+        "activity",
+        "--value",
+        "0",
+        "--ts",
+        ts,
+        "--trust",
+        "self",
+        "--source-chain",
+        "same",
+        "--raw-data",
+        str(raw_path),
+        "--owner-wallet",
+        owner_wallet,
+        "--yes",
+    ]
+    run = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=180,
+        cwd=str(ROOT),
+        env=env,
+    )
+    payload["submitted"] = run.returncode == 0
+    payload["submit_exit"] = run.returncode
+    payload["submit_stdout"] = (run.stdout or "")[-2000:]
+    payload["submit_stderr"] = (run.stderr or "")[-2000:]
+    receipt["peaq"] = {**(receipt.get("peaq") or {}), "activity": payload, "submitted": payload["submitted"]}
+    path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({k: payload[k] for k in payload if k != "rawData"}, indent=2)[:4000])
     return payload

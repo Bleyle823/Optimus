@@ -183,6 +183,37 @@ def pay_supplier(claim_id: str, offline: bool = False) -> dict:
     return _call_robot("pay_supplier", {"claim_id": claim_id})
 
 
+def wrap_near(amount_near: str = "0.15") -> dict:
+    """Guest native NEAR -> wrap.testnet. Storage must already be registered."""
+    cfg = load()
+    require_live(cfg)
+    yocto = int(round(float(amount_near) * 10**24))
+    if yocto <= 0:
+        raise SystemExit("wrap amount must be positive")
+    guest = load_role("guest")
+    client = _client(cfg)
+    nonce = next_nonce(client, cfg["accounts"]["guest"], guest["near_public_key"])
+    signed = sign_function_call(
+        guest,
+        cfg["accounts"]["guest"],
+        cfg["ft_contract"],
+        "near_deposit",
+        {},
+        nonce,
+        client.block_hash(),
+        deposit=yocto,
+        gas=30_000_000_000_000,
+    )
+    result = client.send(signed)
+    tx = result.get("transaction", {}).get("hash", "")
+    return {
+        "tx": tx,
+        "yocto": str(yocto),
+        "explorer": explorer_tx(cfg.get("network", "testnet"), tx, cfg["accounts"]["guest"]),
+        "result": result.get("status"),
+    }
+
+
 def refund_claim(claim_id: str, offline: bool = False) -> dict:
     cfg = load()
     if offline:
