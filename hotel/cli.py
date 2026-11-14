@@ -44,6 +44,9 @@ def main(argv: list[str] | None = None) -> None:
     r.add_argument("--claim", required=True)
     r.add_argument("--offline", action="store_true")
 
+    wn = sub.add_parser("wrap-near", help="Guest native NEAR to wrap.testnet")
+    wn.add_argument("--amount", default="0.15", help="NEAR to wrap")
+
     sub.add_parser("add-function-call-key")
     dep = sub.add_parser("deploy-escrow")
     dep.add_argument("--wasm", required=True)
@@ -99,6 +102,11 @@ def main(argv: list[str] | None = None) -> None:
         from hotel.dispatcher import refund_claim
 
         print(json.dumps(refund_claim(args.claim, offline=args.offline), indent=2, default=str))
+        return
+    if args.cmd == "wrap-near":
+        from hotel.dispatcher import wrap_near
+
+        print(json.dumps(wrap_near(args.amount), indent=2, default=str))
         return
     if args.cmd == "add-function-call-key":
         _add_fc_key()
