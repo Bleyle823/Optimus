@@ -234,6 +234,9 @@ def explorer_tx(network: str, tx_hash: str, account_id: str) -> str:
 def confirm_mainnet(action: str) -> None:
     if os.getenv("INTENTS_LIVE") != "1" and os.getenv("PEAQ_LIVE") != "1":
         raise SystemExit(f"refusing {action}: set the matching *_LIVE=1 env and confirm")
+    # Fixed: automation can set HOTEL_CONFIRM=YES instead of an interactive prompt.
+    if os.getenv("HOTEL_CONFIRM") == "YES":
+        return
     answer = input(f"Type YES to {action} on mainnet: ").strip()
     if answer != "YES":
         raise SystemExit("aborted")
