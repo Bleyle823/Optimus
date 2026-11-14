@@ -143,7 +143,8 @@ def fund_claim(claim_id: str, offline: bool = False) -> dict:
     return stored
 
 
-def _call_robot(method: str, args: dict, deposit: int = 1) -> dict:
+def _call_robot(method: str, args: dict, deposit: int = 0) -> dict:
+    # Fixed: complete and pay_supplier are not payable, so the robot attaches no deposit.
     cfg = load()
     require_live(cfg)
     robot_acct = cfg["accounts"]["robot"]
