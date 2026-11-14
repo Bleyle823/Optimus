@@ -105,6 +105,24 @@ def create_claim(skill_id: str = "fetch_honey", offline: bool = False) -> dict:
     return rec
 
 
+def prepare_claim(skill_id: str = "fetch_honey", offline: bool = False) -> dict:
+    rec = create_claim(skill_id, offline=offline)
+    claim_id = rec.get("claim_id")
+    if not claim_id:
+        raise SystemExit("create_claim produced no claim_id")
+    funded = fund_claim(claim_id, offline=offline)
+    rec.update(funded)
+    rec["skill_id"] = skill_id
+    rec["prepared"] = True
+    path = RECEIPTS_DIR / f"{claim_id}.json"
+    if path.exists():
+        stored = json.loads(path.read_text(encoding="utf-8"))
+        stored.update(rec)
+        path.write_text(json.dumps(stored, indent=2, default=str) + "\n", encoding="utf-8")
+        rec = stored
+    return rec
+
+
 def fund_claim(claim_id: str, offline: bool = False) -> dict:
     cfg = load()
     require_live(cfg)
@@ -323,8 +341,15 @@ def settle_outbox(once: bool = True, offline: bool = False) -> dict | None:
 
             attach_peaq(receipt)
             prev.update(receipt)
-            out.write_text(json.dumps(prev, indent=2) + "\n")
-            print(json.dumps(receipt, indent=2, default=str))
+            out.write_text(json.dumps(prev, indent=2, default=str) + "\n")
+            slim = dict(receipt)
+            for key in ("complete", "pay_supplier"):
+                blob = slim.get(key)
+                if isinstance(blob, dict) and "result" in blob:
+                    blob = dict(blob)
+                    blob.pop("result", None)
+                    slim[key] = blob
+            print(json.dumps(slim, indent=2, default=str))
             return receipt
         if once:
             print("no settlement/outbox.json yet")

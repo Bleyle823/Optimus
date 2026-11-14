@@ -29,6 +29,10 @@ def main(argv: list[str] | None = None) -> None:
     c.add_argument("--skill", default="fetch_honey")
     c.add_argument("--offline", action="store_true")
 
+    pc = sub.add_parser("prepare-claim", help="create_claim then fund_claim for a skill")
+    pc.add_argument("--skill", default="fetch_honey")
+    pc.add_argument("--offline", action="store_true")
+
     f = sub.add_parser("fund-claim")
     f.add_argument("--claim", required=True)
     f.add_argument("--offline", action="store_true")
@@ -82,6 +86,11 @@ def main(argv: list[str] | None = None) -> None:
         from hotel.dispatcher import create_claim
 
         print(json.dumps(create_claim(args.skill, offline=args.offline), indent=2, default=str))
+        return
+    if args.cmd == "prepare-claim":
+        from hotel.dispatcher import prepare_claim
+
+        print(json.dumps(prepare_claim(args.skill, offline=args.offline), indent=2, default=str))
         return
     if args.cmd == "fund-claim":
         from hotel.dispatcher import fund_claim
