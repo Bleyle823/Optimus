@@ -2,7 +2,6 @@
 
 from controller import Robot, Supervisor
 import numpy as np
-from matplotlib import pyplot as plt
 from scipy import signal
 from heapq import heapify, heappush, heappop
 from collections import defaultdict
@@ -11,6 +10,8 @@ import math
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 from py_trees.composites import Sequence
+
+from mapping import cspace_path
 
 def map2world(xm,ym):
     wx = round((round(299*(xm)) +1000)/6)
@@ -23,6 +24,24 @@ def world2map(xw,yw): #addition and division for scaling points to 300x300 displ
     py = (499 - 6*yw)/299
     return (px,py)
     
+def wheel_speed(value, limit):
+    if not math.isfinite(value):
+        return 0.0
+    if value > limit:
+        return limit
+    if value < -limit:
+        return -limit
+    return value
+
+def wrap_angle(angle):
+    if not math.isfinite(angle):
+        return 0.0
+    while angle > math.pi:
+        angle -= 2 * math.pi
+    while angle < -math.pi:
+        angle += 2 * math.pi
+    return angle
+
 def getNeighbors(tuple1,map):
     neighbors = []
     for move in ((0,1),(0,-1),(1,0),(-1,0),(1,1),(-1,1),(-1,-1),(1,-1)): #8 neighborhood (means can move diagonally too)
@@ -84,14 +103,13 @@ class move(Behaviour):
         theta_P=np.arctan2(self.WP[self.indexi][1]-yw,self.WP[self.indexi][0]-xw)
         theta_F = theta_P-theta_W #angle to waypoint
         
-        if theta_F > np.pi: #fix calc issue when > 180 degrees
-            theta_F = theta_F - 2*np.pi
+        theta_F = wrap_angle(theta_F)
         angle1 = math.degrees(theta_F)
         
         #waypoint chaser
         if (rho < 0.3):  #if within 30cm
             self.indexi = self.indexi + 1 #traverse CW
-            if self.indexi == len(self.WP):
+            if self.indexi >= len(self.WP):
                 print('Reached Goal!')
                 self.leftmotor.setVelocity(0)
                 self.rightmotor.setVelocity(0)
@@ -103,8 +121,8 @@ class move(Behaviour):
         phiLdot = (-theta_F*p1 + rho*p2)*speed_boost
         phiRdot = (theta_F*p1 + rho*p2)*speed_boost
         
-        self.leftmotor.setVelocity(max(min(phiLdot,self.MAX_SPEED),-self.MAX_SPEED))
-        self.rightmotor.setVelocity(max(min(phiRdot,self.MAX_SPEED),-self.MAX_SPEED))
+        self.leftmotor.setVelocity(wheel_speed(phiLdot, self.MAX_SPEED))
+        self.rightmotor.setVelocity(wheel_speed(phiRdot, self.MAX_SPEED))
 
         return Status.RUNNING
         
@@ -179,7 +197,7 @@ class route(Behaviour):
         self.leftmotor.setVelocity(0)
         self.rightmotor.setVelocity(0)
         
-        self.map_file = np.load('cspace.npy')
+        self.map_file = np.load(cspace_path())
         self.rows = self.map_file.shape[1]
         self.cols = self.map_file.shape[0]
         
@@ -202,21 +220,13 @@ class route(Behaviour):
         heapify(self.queue)
         self.visited = {self.start_node}
         
-        #----------------------------------------------------PLOT-----------
-        plt.imshow(self.map_file) # shows the map
-        plt.ion() # turns 'interactive mode' on
-        plt.plot(self.goal[1],self.goal[0],'y*') # puts a yellow asterisk at the goal
-        plt.plot(self.start_node[1],self.start_node[0],'b*')
-        #-------------------------------------------------------------------
-   
-        #Draw the map----------------------------
-        self.display.setColor(0x0FFFFFF) 
-        for i in range(self.map_file.shape[0]):  # Rows
-            for j in range(self.map_file.shape[1]):  # Columns
-                # If it's an obstacle (1), set it to black, otherwise white
+        # Sparse map preview (full 299x299 drawPixel stalls the controller for minutes).
+        self.display.setColor(0x0FFFFFF)
+        step = 4
+        for i in range(0, self.map_file.shape[0], step):
+            for j in range(0, self.map_file.shape[1], step):
                 if self.map_file[i, j] == 1:
                     self.display.drawPixel(i, j)
-        #---------------------------------------------
     
     def update(self):
     
@@ -224,20 +234,25 @@ class route(Behaviour):
             print("No path exists!")
             return Status.FAILURE
             
-        #route finder using Greedy-Dijkstra Hybrid-----------------------------------------------
-        (currentdist,node) = heappop(self.queue) #pop(0) uses first in first out
-        self.visited.add(node)
-        for (costnton,neighbor) in getNeighbors(node,self.map_file):
-            if neighbor not in self.visited:
-                dist = np.sqrt((self.goal[0]-neighbor[0])**2+(self.goal[1]-neighbor[1])**2)
-                newcost = dist + costnton
-                if newcost < self.distances[neighbor]:
-                    self.distances[neighbor] = newcost
-                    heappush(self.queue,(newcost,neighbor))
-                    self.parent[neighbor] = node
-                    if neighbor == self.goal:
-                        print("Router has found a path using Greedy-Dijkstra Hybrid....")
-                        return Status.SUCCESS
+        # Same Greedy-Dijkstra as the kitchen robot, but many expansions per tick
+        # so Webots is not idle for minutes while the heap drains one node at a time.
+        for _ in range(400):
+            if not self.queue:
+                print("No path exists!")
+                return Status.FAILURE
+            (currentdist,node) = heappop(self.queue)
+            self.visited.add(node)
+            for (costnton,neighbor) in getNeighbors(node,self.map_file):
+                if neighbor not in self.visited:
+                    dist = np.sqrt((self.goal[0]-neighbor[0])**2+(self.goal[1]-neighbor[1])**2)
+                    newcost = dist + costnton
+                    if newcost < self.distances[neighbor]:
+                        self.distances[neighbor] = newcost
+                        heappush(self.queue,(newcost,neighbor))
+                        self.parent[neighbor] = node
+                        if neighbor == self.goal:
+                            print("Router has found a path using Greedy-Dijkstra Hybrid....")
+                            return Status.SUCCESS
         return Status.RUNNING
         #-------------------------------------------------------------------------------
         
@@ -248,7 +263,9 @@ class route(Behaviour):
             key = self.goal 
             path = []
             
-            while key in self.parent.keys():
+            seen = set()
+            while key in self.parent.keys() and key not in seen:
+                seen.add(key)
                 key = self.parent[key]
                 path.insert(0,key)
             path.append(self.goal)
@@ -336,8 +353,7 @@ class get_in_position(Behaviour): #places gripper around object
         theta_P=np.arctan2(self.location[1]-yw,self.location[0]-xw)
         theta_F = theta_P-theta_W #angle to waypoint
         #print(theta_F)
-        if theta_F > np.pi: #fix calc issue when > 180 degrees
-            theta_F = theta_F - 2*np.pi
+        theta_F = wrap_angle(theta_F)
         angle1 = math.degrees(theta_F)
                   
         p1 = 3
@@ -352,20 +368,20 @@ class get_in_position(Behaviour): #places gripper around object
         #    return Status.RUNNING
         #print(rho)
         if (abs(angle1) < 0.24) & (rho > 1.13): #THEN, DRIVE INTO POSITION (arm is 1.15 long)
-            self.leftmotor.setVelocity(max(min(phiLdot*2,1.1),-1))
-            self.rightmotor.setVelocity(max(min(phiRdot*2,1.1),-1))
+            self.leftmotor.setVelocity(wheel_speed(phiLdot*2, 1.1))
+            self.rightmotor.setVelocity(wheel_speed(phiRdot*2, 1.1))
             return Status.RUNNING
         elif abs(angle1) > 0.24: #FIRST, ROTATE TO THE OBJECT
             rotation_speed = max(min(abs(theta_F)*3, self.MAX_SPEED/3), 0.1)
             if abs(angle1) > 35:
                 rotation_speed = 3
-            direction = np.sign(theta_F)
+            direction = np.sign(theta_F) if math.isfinite(theta_F) else 0.0
             
             left = (-direction * rotation_speed)
             right = (direction * rotation_speed)
 
-            self.leftmotor.setVelocity(left)
-            self.rightmotor.setVelocity(right)
+            self.leftmotor.setVelocity(wheel_speed(left, self.MAX_SPEED))
+            self.rightmotor.setVelocity(wheel_speed(right, self.MAX_SPEED))
             return Status.RUNNING
         else:
             self.leftmotor.setVelocity(0)
@@ -454,8 +470,7 @@ class rotate_to_face(Behaviour): #places gripper around object
         theta_F = theta_P-theta_W #angle to waypoint
         #print(theta_F)
         
-        if theta_F > np.pi: #fix calc issue when > 180 degrees
-            theta_F = theta_F - 2*np.pi
+        theta_F = wrap_angle(theta_F)
         angle1 = math.degrees(theta_F)
                   
         p1 = 3
@@ -465,20 +480,21 @@ class rotate_to_face(Behaviour): #places gripper around object
         
         #print(self.dist)
         if (abs(angle1) < 0.25) & (rho < self.dist): #FACE AND BACK UP
-            self.leftmotor.setVelocity(min(-rho,-1))
-            self.rightmotor.setVelocity(min(-rho,-1))
+            backup = wheel_speed(min(-rho, -1), self.MAX_SPEED)
+            self.leftmotor.setVelocity(backup)
+            self.rightmotor.setVelocity(backup)
             return Status.RUNNING
         elif abs(angle1) > 0.25: #FIRST, ROTATE TO THE OBJECT
             rotation_speed = max(min(abs(theta_F)*3, self.MAX_SPEED/3), 0.1)
             if abs(angle1) > 35:
                 rotation_speed = 3
-            direction = np.sign(theta_F)
+            direction = np.sign(theta_F) if math.isfinite(theta_F) else 0.0
             
             left = (-direction * rotation_speed)
             right = (direction * rotation_speed)
 
-            self.leftmotor.setVelocity(left)
-            self.rightmotor.setVelocity(right)
+            self.leftmotor.setVelocity(wheel_speed(left, self.MAX_SPEED))
+            self.rightmotor.setVelocity(wheel_speed(right, self.MAX_SPEED))
             return Status.RUNNING
         else:
             self.leftmotor.setVelocity(0)

@@ -5125,7 +5125,7 @@ Robot {
   }
   controller "mission_control"
   controllerArgs [
-    "fetch_honey"
+    "all"
   ]
   supervisor TRUE
 }
@@ -5801,3 +5801,4 @@ DEF marker PingPongBall {
   translation 1 -0.68 0.02
   name "marker"
 }
+
