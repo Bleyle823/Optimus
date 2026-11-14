@@ -438,6 +438,8 @@ def peaq_live() -> dict:
 
 def peaq_event(receipt_path: str) -> dict:
     """Activity event. Submits on Solana EventRegistry only when PEAQ_LIVE=1."""
+    # Fixed: load config/.env before reading PEAQ_LIVE.
+    load()
     path = Path(receipt_path)
     if not path.exists():
         path = RECEIPTS_DIR / receipt_path

@@ -15,6 +15,10 @@ __pycache__/
 venv/
 node_modules/
 settlement/outbox.json
+settlement/webots.env
+settlement/mission_log.json
+settlement/hotel_spawn.log
+settlement/bt_*.txt
 settlement/peaq_status.json
 settlement/peaq_did.json
 settlement/peaq_event_raw.json
@@ -25,8 +29,10 @@ peaqos.log
 onboarding-*.json
 !settlement/receipts/.gitkeep
 controllers/mission_control/__pycache__/
+controllers/mcp_bridge/__pycache__/
 .idea/
 .vscode/
 *.swp
 worlds/.kitchen.wbproj
+worlds/*.wbt.bak
 .cursor/plans/
