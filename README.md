@@ -8,9 +8,9 @@ To our knowledge this is the first physical-AI machine loop on NEAR. Software ag
 
 Full argument: [docs/hotel-raas.md](docs/hotel-raas.md).
 
-[![TIAGo at the kitchen counter during fetch_honey](docs/media/kitchen-counter.png)](docs/media/kitchen.mp4)
+![TIAGo fetching honey in the Webots kitchen](docs/media/kitchen.gif)
 
-TIAGo in [`worlds/kitchen.wbt`](worlds/kitchen.wbt) during `fetch_honey`. The HUD shows the NEAR claim. Open the frame for the clip.
+TIAGo in [`worlds/kitchen.wbt`](worlds/kitchen.wbt) during `fetch_honey`. The HUD shows the NEAR claim. Download the clip: [`docs/media/kitchen.mp4`](docs/media/kitchen.mp4).
 
 | Aisle | Table |
 | --- | --- |
